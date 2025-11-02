@@ -1033,7 +1033,8 @@ export default function SkinEditor() {
   function exportJSON() {
     const out = {
       bc: parseInt(baseColor.replace("#", ""), 16),
-      layers: shapes.map((s) => ({
+      // layers: shapes.map((s) => ({
+      layers: [...shapes].reverse().map((s) => ({
         id: s.id,
         scale: +(s.scale / BONK_SCALE_FACTOR).toFixed(6),
         angle: +s.angle.toFixed(6),
@@ -1061,10 +1062,11 @@ export default function SkinEditor() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       let parsed = JSON.parse(evt.target.result);
-      parsed = flipLayers(parsed);
+      // parsed = flipLayers(parsed);
       setBaseColor(`#${parsed.bc.toString(16).padStart(6, "0")}`);
       setShapes(
-        parsed.layers.map((l) => ({
+        // parsed.layers.map((l) => ({
+        parsed.layers.slice().reverse().map((l) => ({
           id: l.id,
           scale: parseFloat(l.scale) * BONK_SCALE_FACTOR,
           angle: parseFloat(l.angle),
