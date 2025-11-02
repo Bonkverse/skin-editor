@@ -1,379 +1,362 @@
-/* === Base Theme === */
-body {
-  background-color: #0b141d;
-  color: #e2f4f1;
-  font-family: "Inter", "Arial", sans-serif;
+/* index.css */
+
+/* --- General layout --- */
+body, html {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
-}
-
-button {
-  font-family: inherit;
+  font-family: "Inter", system-ui, sans-serif;
+  background: #141414;
+  color: #f5f5f5;
+  height: 100%;
+  overflow: hidden;
 }
 
 .editor-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  width: 100%;
   height: 100vh;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
-/* === Header === */
-.editor-header {
+.editor-main {
+  flex: 1;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  background: rgba(13, 24, 30, 0.95);
-  border-bottom: 2px solid #00c6a7;
-  padding: 10px 20px;
-  box-shadow: 0 0 15px rgba(0, 230, 195, 0.25);
-  z-index: 5;
+  justify-content: flex-start;
+  background: #1e1e1e;
+  border-left: 1px solid #333;
+  border-right: 1px solid #333;
+  position: relative;
+  overflow: hidden;
 }
 
-.editor-header .logo {
-  font-size: 1.4rem;
-  font-weight: 600;
-  color: #00e6c3;
-  text-shadow: 0 0 8px rgba(0, 255, 200, 0.5);
-}
-
-.toolbar-actions {
+/* --- Toolbar --- */
+.editor-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
   align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px;
+  background: #222;
+  border-bottom: 1px solid #333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  z-index: 2;
 }
 
-.editor-btn,
-.file-label {
-  background: linear-gradient(180deg, #009688, #00796b);
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+.editor-btn {
+  background: #333;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 10px;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  box-shadow: 0 0 8px rgba(0, 230, 195, 0.3);
+  transition: all 0.15s ease;
+  font-size: 13px;
 }
-.editor-btn:hover,
+
+.editor-btn:hover {
+  background: #3d3d3d;
+}
+
+.editor-btn:active {
+  transform: scale(0.96);
+  background: #505050;
+}
+
+.file-label {
+  position: relative;
+  background: #333;
+  color: #eee;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  cursor: pointer;
+  font-size: 13px;
+}
+
 .file-label:hover {
-  background: linear-gradient(180deg, #00bfa5, #009688);
-  transform: translateY(-1px);
-  box-shadow: 0 0 14px rgba(0, 230, 195, 0.7);
+  background: #3d3d3d;
 }
+
 .file-input {
   display: none;
 }
 
-/* === Layout === */
-.editor-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  position: relative;
+/* --- Canvas --- */
+.editor-canvas {
+  background: radial-gradient(circle at center, #1a1a1a 0%, #0f0f0f 100%);
+  border-radius: 50%;
+  margin-top: 12px;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+  border: 2px solid #222;
 }
 
-/* === Panels === */
-.left-panel,
-.right-panel {
-  width: 260px;
-  background: rgba(15, 25, 35, 0.96);
-  border-right: 2px solid #009688;
+.editor-canvas:active {
+  cursor: grabbing;
+}
+
+/* --- Side Panels --- */
+.side-panels {
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 20px rgba(0, 230, 195, 0.2);
+  background: #1a1a1a;
+  border-right: 1px solid #333;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #444 #1a1a1a;
 }
 
-.right-panel {
-  border-left: 2px solid #009688;
-  border-right: none;
+.side-panels::-webkit-scrollbar {
+  width: 6px;
 }
 
-.left-panel.closed,
-.right-panel.closed {
-  width: 48px;
-  overflow: hidden;
-  box-shadow: none;
-  border-color: transparent;
-  background: rgba(15, 25, 35, 0.5);
+.side-panels::-webkit-scrollbar-thumb {
+  background: #444;
+  border-radius: 4px;
 }
 
-/* === Panel Header === */
-.panel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 12px;
-  color: #00e6c3;
-  border-bottom: 1px solid #00796b;
-  background: rgba(0, 150, 136, 0.15);
-  font-weight: 600;
-}
-.panel-header button {
-  background: none;
-  border: none;
-  color: #00e6c3;
-  cursor: pointer;
-  font-size: 16px;
-  transition: transform 0.2s ease;
-}
-.panel-header button:hover {
-  transform: scale(1.2);
-}
-
-/* === Shape Grid === */
+/* --- Shape Grid --- */
 .shape-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, 42px);
+  gap: 6px;
   padding: 10px;
+  justify-content: center;
 }
 
 .shape-item {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 6px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  padding: 6px 4px;
-}
-.shape-item:hover {
-  background: rgba(0, 230, 195, 0.25);
-  transform: scale(1.05);
-}
-.shape-item img {
-  filter: brightness(2.5) invert(1);
-  width: 32px;
-  height: 32px;
-}
-.shape-item small {
-  display: block;
-  font-size: 10px;
-  color: #aee;
-}
-
-/* === Tabs === */
-.panel-tabs {
+  background: #242424;
+  border: 1px solid #333;
+  border-radius: 8px;
+  width: 40px;
+  height: 50px;
   display: flex;
-  justify-content: space-around;
-  padding: 10px;
-  background: rgba(0, 150, 136, 0.2);
-  border-bottom: 1px solid #009688;
-}
-
-.panel-tabs button {
-  flex: 1;
-  background: none;
-  border: none;
-  color: #ccc;
-  font-weight: 600;
-  padding: 8px;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-.panel-tabs button:hover {
-  color: #00e6c3;
-}
-.panel-tabs .active {
-  color: #00e6c3;
-  background: rgba(0, 150, 136, 0.25);
-}
-
-/* === Canvas === */
-.canvas-wrapper {
-  flex: 1;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: relative;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.editor-canvas {
-  width: 100%;
-  max-width: 700px;
-  max-height: 90vh;
-  background: #0d141c;
-  border: 2px solid #009688;
-  border-radius: 12px;
-  box-shadow: 0 0 25px rgba(0, 230, 195, 0.3);
-  touch-action: none;
+.shape-item:hover {
+  background: #2d2d2d;
+  transform: scale(1.05);
 }
 
-/* === Layers === */
+.shape-item img {
+  pointer-events: none;
+}
+
+.shape-item small {
+  color: #999;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* --- Layers --- */
 .layers-panel {
+  padding: 10px;
+  border-top: 1px solid #333;
+}
+
+.layer-btn {
+  display: block;
+  width: 100%;
+  background: #242424;
+  color: #ddd;
+  border: 1px solid #333;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  text-align: left;
+  font-size: 13px;
+  transition: background 0.15s ease, transform 0.15s ease;
+  cursor: pointer;
+}
+
+.layer-btn:hover {
+  background: #2f2f2f;
+}
+
+.layer-btn.active {
+  background: #3a3a3a;
+  border-color: #666;
+  color: #fff;
+  transform: scale(1.03);
+}
+
+/* --- Shape Properties Panel --- */
+.shape-properties {
+  background: #1a1a1a;
+  border-left: 1px solid #333;
   padding: 10px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-.layer-btn {
-  background: #1b2e3a;
-  border: 1px solid #009688;
-  color: #eee;
-  border-radius: 6px;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.layer-btn:hover {
-  background: #2a4856;
-}
-.layer-btn.active {
-  background: #003f35;
-  color: #00e6c3;
-  font-weight: 600;
-  border: 2px solid #00e6c3;
+  overflow-y: auto;
+  scrollbar-width: thin;
 }
 
-/* === Properties === */
-.shape-properties {
-  padding: 12px;
-}
 .shape-props-form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  font-size: 14px;
 }
+
 .shape-props-form label {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.9rem;
-}
-.shape-props-form input[type="number"] {
-  width: 80px;
-  background: #10222b;
-  border: 1px solid #009688;
-  border-radius: 6px;
-  color: #fff;
-  padding: 4px 6px;
-}
-.shape-props-form input[type="color"] {
-  width: 40px;
-  height: 24px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
+  flex-direction: column;
+  gap: 4px;
+  color: #ddd;
 }
 
-/* === Floating Toolbar (for mobile) === */
-.floating-toolbar {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
+.shape-props-form input[type="number"],
+.shape-props-form input[type="color"] {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  padding: 4px;
+}
+
+.flip-row {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.layer-move-row {
   display: flex;
   gap: 8px;
-  background: rgba(10, 20, 25, 0.8);
-  padding: 6px 10px;
-  border: 1px solid #00e6c3;
-  border-radius: 12px;
-  box-shadow: 0 0 10px rgba(0, 230, 195, 0.5);
-  z-index: 10;
-}
-.floating-toolbar button {
-  background: #009688;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.floating-toolbar button:hover {
-  background: #00bfa5;
+  justify-content: space-between;
 }
 
-/* === Shortcuts Modal === */
+.move-btn,
+.delete-btn {
+  background: #333;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.move-btn:hover {
+  background: #3a3a3a;
+}
+
+.delete-btn {
+  background: #400;
+  border-color: #500;
+}
+
+.delete-btn:hover {
+  background: #600;
+}
+
+/* --- Overlay Controls --- */
+.overlay-controls input[type="range"] {
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+/* --- Modal --- */
 .modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(10, 10, 10, 0.8);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   z-index: 50;
 }
+
 .modal-content {
-  background: #121826;
-  border: 2px solid #00ffcc;
-  border-radius: 12px;
-  padding: 24px;
-  width: 90%;
+  background: #222;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #444;
   max-width: 480px;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 0 20px rgba(0, 255, 200, 0.3);
-  color: #fff;
+  width: 90%;
+  color: #eee;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.6);
 }
+
 .modal-content h2 {
+  margin-top: 0;
   text-align: center;
-  color: #00ffcc;
-  margin-bottom: 10px;
 }
-.modal-content ul {
+
+.shortcuts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shortcuts-grid ul {
   list-style: none;
   padding: 0;
-  font-size: 0.95rem;
+  margin: 0;
 }
-.modal-content li {
-  margin-bottom: 6px;
+
+.shortcuts-grid li {
+  padding: 2px 0;
+  font-size: 14px;
 }
+
 .close-btn {
   display: block;
   margin: 16px auto 0;
-  background: #00ffcc;
-  border: none;
-  color: #000;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: bold;
+  background: #333;
+  color: #eee;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 6px 12px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
+
 .close-btn:hover {
-  background: #66ffe0;
+  background: #3a3a3a;
 }
 
-/* === Responsive Design === */
-@media (max-width: 1024px) {
-  .left-panel,
-  .right-panel {
-    width: 200px;
+/* --- Responsive --- */
+@media (max-width: 1100px) {
+  .editor-container {
+    flex-direction: column;
   }
-}
 
-@media (max-width: 768px) {
-  .editor-body {
+  .side-panels,
+  .shape-properties {
+    width: 100% !important;
+    height: auto;
+    border: none;
+    border-bottom: 1px solid #333;
+  }
+
+  .editor-main {
+    border: none;
+  }
+
+  .editor-toolbar {
     flex-direction: column;
+    align-items: flex-start;
   }
-  .left-panel,
-  .right-panel {
-    width: 100%;
-    height: 180px;
-    order: 1;
-  }
-  .canvas-wrapper {
-    order: 0;
-  }
-  .right-panel {
-    border-left: none;
-    border-top: 2px solid #009688;
-  }
-  .floating-toolbar {
-    right: 50%;
-    transform: translateX(50%);
-    bottom: 20px;
-  }
-  .editor-header {
-    flex-direction: column;
-    gap: 8px;
+
+  .editor-canvas {
+    width: 90vw;
+    height: 90vw;
   }
 }

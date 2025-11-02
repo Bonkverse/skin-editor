@@ -1006,10 +1006,11 @@
 // );
 // }
 
+// src/App.jsx
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { FiSettings } from "react-icons/fi";
+import { FiSettings, FiChevronDown, FiChevronRight, FiSidebar } from "react-icons/fi";
 import "./index.css";
-import { flipLayers } from "./utils/flipLayers";
+// import { flipLayers } from "./utils/flipLayers"; // preserved if you want to re-enable later
 
 const CANVAS_SIZE = 700;
 const TOTAL_SHAPES = 114;
@@ -1032,13 +1033,11 @@ async function loadAndNormalizeSvg(id) {
   const walk = (el) => {
     if (el.hasAttribute("fill")) {
       const f = el.getAttribute("fill");
-      if (f && f.toLowerCase() !== "none")
-        el.setAttribute("fill", "currentColor");
+      if (f && f.toLowerCase() !== "none") el.setAttribute("fill", "currentColor");
     }
     if (el.hasAttribute("stroke")) {
       const s = el.getAttribute("stroke");
-      if (s && s.toLowerCase() !== "none")
-        el.setAttribute("stroke", "currentColor");
+      if (s && s.toLowerCase() !== "none") el.setAttribute("stroke", "currentColor");
     }
     if (el.hasAttribute("style")) {
       let style = el.getAttribute("style");
@@ -1081,11 +1080,14 @@ export default function SkinEditor() {
   const [baseColor, setBaseColor] = useState("#ffffff");
   const [selectedIndices, setSelectedIndices] = useState([]);
   const [showShortcuts, setShowShortcuts] = useState(false);
-  const [activeTab, setActiveTab] = useState("layers");
 
-  const [showLeft, setShowLeft] = useState(true);
-  const [showRight, setShowRight] = useState(true);
+  // Collapsible UI state
+  const [showLeftPanels, setShowLeftPanels] = useState(true); // master toggle for small screens
+  const [openShapesPanel, setOpenShapesPanel] = useState(true);
+  const [openLayersPanel, setOpenLayersPanel] = useState(true);
+  const [openPropsPanel, setOpenPropsPanel] = useState(true);
 
+  // Overlay state
   const [overlay, setOverlay] = useState({
     src: null,
     x: CANVAS_SIZE / 2,
@@ -1105,7 +1107,7 @@ export default function SkinEditor() {
   const isSelected = (i) => selectedIndices.includes(i);
   const clearSelection = () => setSelectedIndices([]);
 
-  // ---------- Shape Logic ----------
+  // ---------- Shape logic ----------
   function addShape(id, opts = {}) {
     const newShape = {
       id,
@@ -1123,14 +1125,12 @@ export default function SkinEditor() {
   }
 
   function updateShape(i, patch) {
-    setShapes((prev) =>
-      prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s))
-    );
+    setShapes((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
   }
 
   function moveShapeUp(i) {
     setShapes((prev) => {
-      if (i >= prev.length - 1) return prev;
+      if (i >= prev.length - 1) return prev; // already at top
       const newShapes = [...prev];
       [newShapes[i], newShapes[i + 1]] = [newShapes[i + 1], newShapes[i]];
       return newShapes;
@@ -1140,7 +1140,7 @@ export default function SkinEditor() {
 
   function moveShapeDown(i) {
     setShapes((prev) => {
-      if (i <= 0) return prev;
+      if (i <= 0) return prev; // already at bottom
       const newShapes = [...prev];
       [newShapes[i], newShapes[i - 1]] = [newShapes[i - 1], newShapes[i]];
       return newShapes;
@@ -1148,14 +1148,16 @@ export default function SkinEditor() {
     setSelectedIndices([i - 1]);
   }
 
-  // ---------- Shape Dragging ----------
+  // ---------- Multi-select drag ----------
   function onMouseDownShape(e, i) {
     e.stopPropagation();
     const multi = e.shiftKey || e.metaKey || e.ctrlKey;
     setSelectedIndices((prev) => {
       if (multi) {
         return prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
-      } else return [i];
+      } else {
+        return [i];
+      }
     });
 
     const dragging = selectedIndices.includes(i) ? selectedIndices : [i];
@@ -1168,17 +1170,12 @@ export default function SkinEditor() {
       y: shapes[idx].y,
     }));
 
-    dragRef.current = {
-      dragging,
-      startX,
-      startY,
-      zoom: zoomAtDragStart,
-      originalPositions,
-    };
+    dragRef.current = { dragging, startX, startY, zoom: zoomAtDragStart, originalPositions };
 
     function onMove(ev) {
       const ref = dragRef.current;
-      if (!ref) return;
+      if (!ref || !ref.originalPositions) return;
+
       const dx = (ev.clientX - ref.startX) / ref.zoom;
       const dy = (ev.clientY - ref.startY) / ref.zoom;
 
@@ -1200,10 +1197,10 @@ export default function SkinEditor() {
     window.addEventListener("mouseup", onUp);
   }
 
-  // ---------- Shape Handle (Scale + Rotate) ----------
   function onMouseDownHandle(e, i) {
     e.stopPropagation();
     setSelectedIndices([i]);
+
     const shape = shapes[i];
     const rect = e.currentTarget.closest("svg").getBoundingClientRect();
     const zoom = camera.zoom;
@@ -1219,22 +1216,33 @@ export default function SkinEditor() {
     const start = toWorld(e.clientX, e.clientY);
     const cx = shape.x;
     const cy = shape.y;
+
     const startVec = { x: start.x - cx, y: start.y - cy };
     const startAngle = shape.angle;
     const startScale = shape.scale;
 
-    handleRef.current = { i, cx, cy, startVec, startAngle, startScale, zoom };
+    handleRef.current = {
+      i,
+      cx,
+      cy,
+      startVec,
+      startAngle,
+      startScale,
+      zoom,
+      camX,
+      camY,
+    };
 
     function onMove(ev) {
       const cur = toWorld(ev.clientX, ev.clientY);
-      const curVec = { x: cur.x - cx, y: cur.y - cy };
-      const d0 = Math.hypot(startVec.x, startVec.y);
+      const curVec = { x: cur.x - handleRef.current.cx, y: cur.y - handleRef.current.cy };
+      const d0 = Math.hypot(handleRef.current.startVec.x, handleRef.current.startVec.y);
       const d1 = Math.hypot(curVec.x, curVec.y);
-      const scale = Math.max(0.05, startScale * (d1 / d0));
-      const a0 = Math.atan2(startVec.y, startVec.x);
+      const scale = Math.max(0.05, handleRef.current.startScale * (d1 / d0));
+      const a0 = Math.atan2(handleRef.current.startVec.y, handleRef.current.startVec.x);
       const a1 = Math.atan2(curVec.y, curVec.x);
       const deltaDeg = ((a1 - a0) * 180) / Math.PI;
-      updateShape(i, { scale, angle: startAngle + deltaDeg });
+      updateShape(i, { scale, angle: handleRef.current.startAngle + deltaDeg });
     }
 
     function onUp() {
@@ -1247,7 +1255,7 @@ export default function SkinEditor() {
     window.addEventListener("mouseup", onUp);
   }
 
-  // ---------- Camera Controls ----------
+  // ---------- Camera ----------
   useEffect(() => {
     const svg = canvasRef.current;
     if (!svg) return;
@@ -1300,7 +1308,62 @@ export default function SkinEditor() {
     };
   }, []);
 
-  const resetCamera = () => setCamera({ x: 0, y: 0, zoom: 1 });
+  function resetCamera() {
+    setCamera({ x: 0, y: 0, zoom: 1 });
+  }
+
+  // ---------- Export / Import ----------
+  function exportJSON() {
+    const out = {
+      bc: parseInt(baseColor.replace("#", ""), 16),
+      // layers: shapes.map((s) => ({
+      layers: [...shapes].reverse().map((s) => ({
+        id: s.id,
+        scale: +(s.scale / BONK_SCALE_FACTOR).toFixed(6),
+        angle: +s.angle.toFixed(6),
+        x: +(-((s.x - CANVAS_SIZE / 2) / BONK_POS_FACTOR)).toFixed(6),
+        y: +(((s.y - CANVAS_SIZE / 2) / BONK_POS_FACTOR)).toFixed(6),
+        flipX: !!s.flipX,
+        flipY: !!s.flipY,
+        color: parseInt(s.color.replace("#", ""), 16),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bonk-skin.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importJSON(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      let parsed = JSON.parse(evt.target.result);
+      // parsed = flipLayers(parsed);
+      setBaseColor(`#${parsed.bc.toString(16).padStart(6, "0")}`);
+      setShapes(
+        // parsed.layers.map((l) => ({
+        parsed.layers.slice().reverse().map((l) => ({
+          id: l.id,
+          scale: parseFloat(l.scale) * BONK_SCALE_FACTOR,
+          angle: parseFloat(l.angle),
+          x: parseFloat(l.x) * BONK_POS_FACTOR + CANVAS_SIZE / 2,
+          y: parseFloat(l.y) * BONK_POS_FACTOR + CANVAS_SIZE / 2,
+          flipX: !!l.flipX,
+          flipY: !!l.flipY,
+          color: `#${l.color.toString(16).padStart(6, "0")}`,
+        }))
+      );
+      setSelectedIndices([]);
+    };
+    reader.readAsText(file);
+  }
 
   // ---------- Shape Renderer ----------
   function Shape({ s, i }) {
@@ -1360,214 +1423,705 @@ export default function SkinEditor() {
     );
   }
 
+  // ---------- Keyboard Shortcuts ----------
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === "INPUT") return;
+      if (selectedIndices.length === 0 && !["?", "/"].includes(e.key)) {
+        // allow help even with no selection
+      } else if (selectedIndices.length === 0) {
+        return;
+      }
+
+      const moveStep = e.shiftKey ? 10 : 1;
+      setShapes((prev) => {
+        const newShapes = [...prev];
+        for (const idx of selectedIndices) {
+          const s = newShapes[idx];
+          switch (e.key) {
+            case "ArrowUp":
+              newShapes[idx] = { ...s, y: s.y - moveStep };
+              e.preventDefault();
+              break;
+            case "ArrowDown":
+              newShapes[idx] = { ...s, y: s.y + moveStep };
+              e.preventDefault();
+              break;
+            case "ArrowLeft":
+              newShapes[idx] = { ...s, x: s.x - moveStep };
+              e.preventDefault();
+              break;
+            case "ArrowRight":
+              newShapes[idx] = { ...s, x: s.x + moveStep };
+              e.preventDefault();
+              break;
+            case "r":
+              newShapes[idx] = { ...s, angle: s.angle + 5 };
+              break;
+            case "R":
+              newShapes[idx] = { ...s, angle: s.angle - 5 };
+              break;
+            case "x":
+              newShapes[idx] = { ...s, flipX: !s.flipX };
+              break;
+            case "y":
+              newShapes[idx] = { ...s, flipY: !s.flipY };
+              break;
+            case "+":
+            case "=":
+              newShapes[idx] = { ...s, scale: s.scale * 1.05 };
+              break;
+            case "-":
+              newShapes[idx] = { ...s, scale: s.scale * 0.95 };
+              break;
+          }
+        }
+        return newShapes;
+      });
+
+      if (e.key === "Escape") clearSelection();
+
+      // Ctrl/Meta commands
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key.toLowerCase()) {
+          case "s":
+            e.preventDefault();
+            exportJSON();
+            break;
+          case "d":
+            e.preventDefault();
+            setShapes((prev) => [
+              ...prev,
+              ...selectedIndices.map((i) => ({
+                ...prev[i],
+                x: prev[i].x + 10,
+                y: prev[i].y + 10,
+              })),
+            ]);
+            break;
+          case "c":
+            e.preventDefault();
+            navigator.clipboard.writeText(JSON.stringify(selectedIndices.map((i) => shapes[i])));
+            break;
+          case "v":
+            e.preventDefault();
+            navigator.clipboard.readText().then((text) => {
+              try {
+                const pasted = JSON.parse(text);
+                if (Array.isArray(pasted)) {
+                  setShapes((prev) => [
+                    ...prev,
+                    ...pasted.map((p) => ({
+                      ...p,
+                      x: p.x + 10,
+                      y: p.y + 10,
+                    })),
+                  ]);
+                }
+              } catch {}
+            });
+            break;
+          case "backspace":
+          case "delete":
+            e.preventDefault();
+            setShapes((prev) => prev.filter((_, idx) => !selectedIndices.includes(idx)));
+            clearSelection();
+            break;
+          default:
+            break;
+        }
+      }
+    };
+
+    const handleHelpShortcut = (e) => {
+      // Shift+? or /
+      if ((e.shiftKey && e.key === "?") || e.key === "/") {
+        e.preventDefault();
+        setShowShortcuts((v) => !v);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleHelpShortcut);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keydown", handleHelpShortcut);
+    };
+  }, [selectedIndices, shapes]);
+
   // ---------- Render ----------
   return (
-    <div className="editor-container">
-      {/* Header */}
-      <div className="editor-header">
-        <div className="logo">🎨 Bonkverse Editor</div>
-        <div className="toolbar-actions">
-          <button className="editor-btn" onClick={resetCamera}>Reset</button>
+    <div className="editor-container" style={{ width: "100%", boxSizing: "border-box" }}>
+      {/* Left rail: collapsible panels (responsive) */}
+      <aside
+        className="side-panels"
+        style={{
+          width: showLeftPanels ? 260 : 54,
+          transition: "width 160ms ease",
+          overflow: "hidden",
+        }}
+      >
+        {/* Panels header for small screens */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <button
+            className="editor-btn"
+            aria-label="Toggle side panels"
+            title="Toggle Panels"
+            onClick={() => setShowLeftPanels((v) => !v)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 10px" }}
+          >
+            <FiSidebar size={16} />
+            {showLeftPanels ? "Hide" : "Show"}
+          </button>
+        </div>
+
+        {/* Shapes Panel (collapsible) */}
+        <div className="shapes-panel" style={{ paddingTop: 10 }}>
+          <button
+            onClick={() => setOpenShapesPanel((v) => !v)}
+            aria-expanded={openShapesPanel}
+            className="layer-btn"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              margin: 0,
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 700 }}>
+              {openShapesPanel ? <FiChevronDown /> : <FiChevronRight />} Shapes
+            </span>
+          </button>
+
+          <div
+            style={{
+              maxHeight: openShapesPanel ? 260 : 0,
+              overflow: "hidden",
+              transition: "max-height 180ms ease",
+              marginTop: openShapesPanel ? 12 : 0,
+            }}
+          >
+            <div className="shape-grid">
+              {Array.from({ length: TOTAL_SHAPES }, (_, idx) => {
+                const id = idx + 1;
+                return (
+                  <div key={id} className="shape-item" onClick={() => addShape(id)}>
+                    <img src={`/output_shapes/${id}.svg`} alt={`Shape ${id}`} width={32} height={32} />
+                    <small>{id}</small>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Layers Panel (collapsible) */}
+        <div className="layers-panel">
+          <button
+            onClick={() => setOpenLayersPanel((v) => !v)}
+            aria-expanded={openLayersPanel}
+            className="layer-btn"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              margin: 0,
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 700 }}>
+              {openLayersPanel ? <FiChevronDown /> : <FiChevronRight />} Layers
+            </span>
+          </button>
+
+          <div
+            style={{
+              maxHeight: openLayersPanel ? 360 : 0,
+              overflow: "hidden",
+              transition: "max-height 180ms ease",
+              marginTop: openLayersPanel ? 12 : 0,
+            }}
+          >
+            {shapes
+              .slice()
+              .reverse()
+              .map((s, i) => {
+                const realIndex = shapes.length - 1 - i;
+                const selected = isSelected(realIndex);
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedIndices([realIndex])}
+                    className={`layer-btn ${selected ? "active" : ""}`}
+                    style={{ width: "100%", textAlign: "left" }}
+                  >
+                    {`Shape ${s.id}`}
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      </aside>
+
+      {/* Main column */}
+      <div
+        className="editor-main overlay-dropzone"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const file = e.dataTransfer.files[0];
+          if (file && file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+              setOverlay((o) => ({
+                ...o,
+                src: evt.target.result,
+                visible: true,
+              }));
+            };
+            reader.readAsDataURL(file);
+          }
+        }}
+        style={{ minWidth: 0 }}
+      >
+        {/* Toolbar */}
+        <div className="editor-toolbar" style={{ width: "100%" }}>
+          <label>
+            Base color:
+            <input
+              type="color"
+              value={baseColor}
+              onChange={(e) => setBaseColor(e.target.value)}
+              aria-label="Base color"
+            />
+          </label>
+
+          <button
+            className="editor-btn"
+            onClick={async () => {
+              const skinJSON = {
+                bc: parseInt(baseColor.replace("#", ""), 16),
+                layers: [...shapes].reverse().map((s) => ({
+                  id: s.id,
+                  scale: +(s.scale / BONK_SCALE_FACTOR).toFixed(6),
+                  angle: +s.angle.toFixed(6),
+                  x: +(((s.x - CANVAS_SIZE / 2) / BONK_POS_FACTOR)).toFixed(6),
+                  y: +(((s.y - CANVAS_SIZE / 2) / BONK_POS_FACTOR)).toFixed(6),
+                  flipX: !!s.flipX,
+                  flipY: !!s.flipY,
+                  color: parseInt(s.color.replace("#", ""), 16),
+                })),
+              };
+
+              const username = prompt("Bonk.io Username:");
+              const password = prompt("Bonk.io Password:");
+              if (!username || !password) return alert("Missing credentials");
+
+              const res = await fetch("/api/wear", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password, skin: skinJSON }),
+              });
+
+              const data = await res.json();
+              if (data.ok) {
+                alert(`✅ Skin applied successfully to slot ${data.activeSlot}!`);
+                console.log("Skin code:", data.skinCode);
+              } else {
+                alert("❌ Failed to wear skin: " + (data.error || "unknown"));
+              }
+            }}
+          >
+            Wear Skin
+          </button>
+
           <button className="editor-btn" onClick={exportJSON}>Export</button>
           <label className="file-label">
             Import
-            <input type="file" accept=".json" onChange={(e) => importJSON(e)} />
+            <input type="file" accept=".json" onChange={importJSON} className="file-input" />
           </label>
+
           <button
             className="editor-btn"
+            onClick={() =>
+              selectedIndices.length > 0 &&
+              setShapes((prev) =>
+                prev.map((s, i) =>
+                  selectedIndices.includes(i) ? { ...s, flipX: !s.flipX } : s
+                )
+              )
+            }
+          >
+            FlipX
+          </button>
+          <button
+            className="editor-btn"
+            onClick={() =>
+              selectedIndices.length > 0 &&
+              setShapes((prev) =>
+                prev.map((s, i) =>
+                  selectedIndices.includes(i) ? { ...s, flipY: !s.flipY } : s
+                )
+              )
+            }
+          >
+            FlipY
+          </button>
+
+          <button className="editor-btn" onClick={resetCamera}>
+            Reset View
+          </button>
+
+          {/* Overlay Controls */}
+          {overlay.src && (
+            <div className="overlay-controls" style={{ display: "inline-flex", gap: 10, alignItems: "center" }}>
+              <label>
+                Opacity:
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={overlay.opacity}
+                  onChange={(e) =>
+                    setOverlay((o) => ({
+                      ...o,
+                      opacity: parseFloat(e.target.value),
+                    }))
+                  }
+                  aria-label="Overlay opacity"
+                />
+              </label>
+              <button
+                className="editor-btn"
+                onClick={() => setOverlay((o) => ({ ...o, visible: !o.visible }))}
+              >
+                {overlay.visible ? "Hide Overlay" : "Show Overlay"}
+              </button>
+              <button
+                className="editor-btn"
+                onClick={() =>
+                  setOverlay({
+                    src: null,
+                    x: CANVAS_SIZE / 2,
+                    y: CANVAS_SIZE / 2,
+                    scale: 1,
+                    opacity: 0.5,
+                    visible: true,
+                  })
+                }
+              >
+                Remove
+              </button>
+            </div>
+          )}
+
+          {/* Shortcuts */}
+          <button
+            className="editor-btn"
+            title="Keyboard Shortcuts"
             onClick={() => setShowShortcuts(true)}
           >
-            <FiSettings /> Shortcuts
+            <FiSettings size={18} style={{ marginRight: "4px" }} />
+            Shortcuts
           </button>
-        </div>
-      </div>
 
-      {/* Body */}
-      <div className="editor-body">
-        {/* Left Panel */}
-        <aside className={`left-panel ${showLeft ? "open" : "closed"}`}>
-          <div className="panel-header">
-            <h3>Shapes</h3>
-            <button onClick={() => setShowLeft(!showLeft)}>
-              {showLeft ? "⮜" : "⮞"}
+          {/* Quick panel toggles (handy on mobile) */}
+          <div style={{ marginLeft: "auto", display: "inline-flex", gap: 8, alignItems: "center" }}>
+            <button
+              className="editor-btn"
+              onClick={() => setOpenShapesPanel((v) => !v)}
+              title="Toggle Shapes Panel"
+            >
+              {openShapesPanel ? "Hide Shapes" : "Show Shapes"}
+            </button>
+            <button
+              className="editor-btn"
+              onClick={() => setOpenLayersPanel((v) => !v)}
+              title="Toggle Layers Panel"
+            >
+              {openLayersPanel ? "Hide Layers" : "Show Layers"}
+            </button>
+            <button
+              className="editor-btn"
+              onClick={() => setOpenPropsPanel((v) => !v)}
+              title="Toggle Properties Panel"
+            >
+              {openPropsPanel ? "Hide Props" : "Show Props"}
             </button>
           </div>
-          <div className="shape-grid">
-            {Array.from({ length: TOTAL_SHAPES }, (_, idx) => {
-              const id = idx + 1;
-              return (
-                <div key={id} className="shape-item" onClick={() => addShape(id)}>
-                  <img src={`/output_shapes/${id}.svg`} width={32} height={32} />
-                  <small>{id}</small>
-                </div>
-              );
-            })}
-          </div>
-        </aside>
+
+          {/* Shape color quick picker */}
+          <input
+            type="color"
+            value={selectedIndices.length === 1 ? shapes[selectedIndices[0]].color : "#000000"}
+            onChange={(e) =>
+              selectedIndices.length > 0 &&
+              setShapes((prev) =>
+                prev.map((s, i) =>
+                  selectedIndices.includes(i) ? { ...s, color: e.target.value } : s
+                )
+              )
+            }
+            title="Shape color"
+            aria-label="Shape color"
+          />
+        </div>
 
         {/* Canvas */}
-        <main className="canvas-wrapper">
-          <svg
-            ref={canvasRef}
-            width={CANVAS_SIZE}
-            height={CANVAS_SIZE}
-            className="editor-canvas"
-            onMouseDown={clearSelection}
-          >
-            <g transform={`scale(${camera.zoom}) translate(${camera.x},${camera.y})`}>
-              <defs>
-                <clipPath id="playerClip">
-                  <circle
-                    cx={CANVAS_SIZE / 2}
-                    cy={CANVAS_SIZE / 2}
-                    r={BALL_RADIUS_PX}
-                  />
-                </clipPath>
-              </defs>
-              <circle
-                cx={CANVAS_SIZE / 2}
-                cy={CANVAS_SIZE / 2}
-                r={BALL_RADIUS_PX}
-                fill={baseColor}
-                stroke="#333"
-                strokeWidth={3}
+        <svg
+          ref={canvasRef}
+          width={CANVAS_SIZE}
+          height={CANVAS_SIZE}
+          className="editor-canvas"
+          onMouseDown={clearSelection}
+          role="img"
+          aria-label="Skin canvas"
+        >
+          <g transform={`scale(${camera.zoom}) translate(${camera.x},${camera.y})`}>
+            <defs>
+              <clipPath id="playerClip">
+                <circle cx={CANVAS_SIZE / 2} cy={CANVAS_SIZE / 2} r={BALL_RADIUS_PX} />
+              </clipPath>
+            </defs>
+
+            {/* Shadow outline */}
+            <circle
+              cx={CANVAS_SIZE / 2}
+              cy={CANVAS_SIZE / 2}
+              r={BALL_RADIUS_PX + 2}
+              fill="none"
+              stroke="rgba(0,0,0,0.25)"
+              strokeWidth={4}
+            />
+
+            {/* Base fill */}
+            <circle
+              cx={CANVAS_SIZE / 2}
+              cy={CANVAS_SIZE / 2}
+              r={BALL_RADIUS_PX}
+              fill={baseColor}
+              stroke="#333"
+              strokeWidth={3}
+            />
+
+            {/* Overlay image */}
+            {overlay.src && overlay.visible && (
+              <image
+                href={overlay.src}
+                x={overlay.x - CANVAS_SIZE / 2}
+                y={overlay.y - CANVAS_SIZE / 2}
+                width={CANVAS_SIZE * overlay.scale}
+                height={CANVAS_SIZE * overlay.scale}
+                opacity={overlay.opacity}
+                style={{ cursor: "move" }}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  overlayDrag.current = {
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    startPos: { x: overlay.x, y: overlay.y },
+                  };
+                  const onMove = (ev) => {
+                    const dx = ev.clientX - overlayDrag.current.startX;
+                    const dy = ev.clientY - overlayDrag.current.startY;
+                    setOverlay((o) => ({
+                      ...o,
+                      x: overlayDrag.current.startPos.x + dx,
+                      y: overlayDrag.current.startPos.y + dy,
+                    }));
+                  };
+                  const onUp = () => {
+                    window.removeEventListener("mousemove", onMove);
+                    window.removeEventListener("mouseup", onUp);
+                    overlayDrag.current = null;
+                  };
+                  window.addEventListener("mousemove", onMove);
+                  window.addEventListener("mouseup", onUp);
+                }}
               />
-              <g clipPath="url(#playerClip)">
-                {shapes.map((s, i) => (
-                  <Shape key={i} s={s} i={i} />
-                ))}
-              </g>
+            )}
+
+            {/* Shapes */}
+            <g clipPath="url(#playerClip)">
+              {shapes.map((s, i) => (
+                <Shape key={i} s={s} i={i} />
+              ))}
             </g>
-          </svg>
-
-          {/* Floating Toolbar (Mobile) */}
-          <div className="floating-toolbar">
-            <button onClick={resetCamera}>Center</button>
-            <button onClick={() => setShowShortcuts(true)}>?</button>
-          </div>
-        </main>
-
-        {/* Right Panel */}
-        <aside className={`right-panel ${showRight ? "open" : "closed"}`}>
-          <div className="panel-tabs">
-            <button
-              className={activeTab === "layers" ? "active" : ""}
-              onClick={() => setActiveTab("layers")}
-            >
-              Layers
-            </button>
-            <button
-              className={activeTab === "props" ? "active" : ""}
-              onClick={() => setActiveTab("props")}
-            >
-              Properties
-            </button>
-          </div>
-
-          {activeTab === "layers" ? (
-            <div className="layers-panel">
-              {shapes
-                .slice()
-                .reverse()
-                .map((s, i) => {
-                  const realIndex = shapes.length - 1 - i;
-                  const selected = isSelected(realIndex);
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedIndices([realIndex])}
-                      className={`layer-btn ${selected ? "active" : ""}`}
-                    >
-                      <img src={`/output_shapes/${s.id}.svg`} width={20} height={20} />
-                      Shape {s.id}
-                    </button>
-                  );
-                })}
-            </div>
-          ) : (
-            selectedIndices.length === 1 && (
-              <div className="shape-properties">
-                <h3>Shape Properties</h3>
-                {(() => {
-                  const i = selectedIndices[0];
-                  const s = shapes[i];
-                  return (
-                    <div className="shape-props-form">
-                      <label>
-                        Color:
-                        <input
-                          type="color"
-                          value={s.color}
-                          onChange={(e) => updateShape(i, { color: e.target.value })}
-                        />
-                      </label>
-                      <label>
-                        Scale:
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={s.scale.toFixed(3)}
-                          onChange={(e) =>
-                            updateShape(i, { scale: parseFloat(e.target.value) || 0 })
-                          }
-                        />
-                      </label>
-                      <label>
-                        Angle:
-                        <input
-                          type="number"
-                          step="1"
-                          value={s.angle.toFixed(3)}
-                          onChange={(e) =>
-                            updateShape(i, { angle: parseFloat(e.target.value) || 0 })
-                          }
-                        />
-                      </label>
-                      <label>
-                        X Pos:
-                        <input
-                          type="number"
-                          step="1"
-                          value={s.x.toFixed(1)}
-                          onChange={(e) =>
-                            updateShape(i, { x: parseFloat(e.target.value) || 0 })
-                          }
-                        />
-                      </label>
-                      <label>
-                        Y Pos:
-                        <input
-                          type="number"
-                          step="1"
-                          value={s.y.toFixed(1)}
-                          onChange={(e) =>
-                            updateShape(i, { y: parseFloat(e.target.value) || 0 })
-                          }
-                        />
-                      </label>
-                    </div>
-                  );
-                })()}
-              </div>
-            )
-          )}
-        </aside>
+          </g>
+        </svg>
       </div>
+
+      {/* Right: Shape Properties (collapsible) */}
+      {selectedIndices.length === 1 && (
+        <aside
+          className="shape-properties"
+          style={{
+            width: openPropsPanel ? 280 : 54,
+            transition: "width 160ms ease",
+            overflow: "hidden",
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={() => setOpenPropsPanel((v) => !v)}
+            aria-expanded={openPropsPanel}
+            className="layer-btn"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: openPropsPanel ? 10 : 0,
+            }}
+          >
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 700 }}>
+              {openPropsPanel ? <FiChevronDown /> : <FiChevronRight />} Shape Properties
+            </span>
+          </button>
+
+          <div
+            style={{
+              maxHeight: openPropsPanel ? 1000 : 0,
+              overflow: "hidden",
+              transition: "max-height 180ms ease",
+            }}
+          >
+            {(() => {
+              const i = selectedIndices[0];
+              const s = shapes[i];
+              return (
+                <div className="shape-props-form">
+                  <label>
+                    Color:
+                    <input
+                      type="color"
+                      value={s.color}
+                      onChange={(e) => updateShape(i, { color: e.target.value })}
+                    />
+                  </label>
+
+                  <label>
+                    Scale:
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={s.scale.toFixed(3)}
+                      onChange={(e) => updateShape(i, { scale: parseFloat(e.target.value) || 0 })}
+                    />
+                  </label>
+
+                  <label>
+                    Angle:
+                    <input
+                      type="number"
+                      step="1"
+                      value={s.angle.toFixed(3)}
+                      onChange={(e) => updateShape(i, { angle: parseFloat(e.target.value) || 0 })}
+                    />
+                  </label>
+
+                  <label>
+                    X Pos:
+                    <input
+                      type="number"
+                      step="1"
+                      value={s.x.toFixed(1)}
+                      onChange={(e) => updateShape(i, { x: parseFloat(e.target.value) || 0 })}
+                    />
+                  </label>
+
+                  <label>
+                    Y Pos:
+                    <input
+                      type="number"
+                      step="1"
+                      value={s.y.toFixed(1)}
+                      onChange={(e) => updateShape(i, { y: parseFloat(e.target.value) || 0 })}
+                    />
+                  </label>
+
+                  <div className="flip-row">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={s.flipX}
+                        onChange={(e) => updateShape(i, { flipX: e.target.checked })}
+                      />{" "}
+                      Flip X
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={s.flipY}
+                        onChange={(e) => updateShape(i, { flipY: e.target.checked })}
+                      />{" "}
+                      Flip Y
+                    </label>
+                  </div>
+
+                  <div className="layer-move-row">
+                    <button className="move-btn" onClick={() => moveShapeUp(i)} disabled={i === shapes.length - 1}>
+                      Move Up
+                    </button>
+                    <button className="move-btn" onClick={() => moveShapeDown(i)} disabled={i === 0}>
+                      Move Down
+                    </button>
+                  </div>
+
+                  <button
+                    className="delete-btn"
+                    onClick={() => {
+                      setShapes((prev) => prev.filter((_, idx) => idx !== i));
+                      setSelectedIndices([]);
+                    }}
+                  >
+                    Delete Shape
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        </aside>
+      )}
 
       {/* Shortcuts Modal */}
       {showShortcuts && (
         <div className="modal-overlay" onClick={() => setShowShortcuts(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>🎹 Keyboard Shortcuts</h2>
-            <ul>
-              <li>Arrow Keys — Move</li>
-              <li>R / Shift+R — Rotate</li>
-              <li>+ / - — Scale</li>
-              <li>X / Y — Flip</li>
-              <li>Ctrl+C / Ctrl+V — Copy/Paste</li>
-              <li>Ctrl+D — Duplicate</li>
-              <li>Delete — Remove</li>
-            </ul>
+            <div className="shortcuts-grid">
+              <div>
+                <h3>🧩 Shape Controls</h3>
+                <ul>
+                  <li>
+                    <b>Arrow Keys</b> — Move (Shift = 10px)
+                  </li>
+                  <li>
+                    <b>R / Shift+R</b> — Rotate ±5°
+                  </li>
+                  <li>
+                    <b>+</b> / <b>-</b> — Scale up/down
+                  </li>
+                  <li>
+                    <b>X / Y</b> — Flip horizontally/vertically
+                  </li>
+                  <li>
+                    <b>Delete</b> — Delete selected
+                  </li>
+                  <li>
+                    <b>Ctrl+D</b> — Duplicate selected
+                  </li>
+                  <li>
+                    <b>Ctrl+C / Ctrl+V</b> — Copy / Paste
+                  </li>
+                  <li>
+                    <b>Shift / Ctrl+Click</b> — Multi-select
+                  </li>
+                </ul>
+              </div>
+            </div>
             <button className="close-btn" onClick={() => setShowShortcuts(false)}>
               Close
             </button>
