@@ -228,140 +228,286 @@ function moveShapeDown(i) {
 
 
   // ---------- Multi-select drag ----------
+  // function onMouseDownShape(e, i) {
+  //   e.stopPropagation();
+  //   const multi = e.shiftKey || e.metaKey || e.ctrlKey;
+  //   setSelectedIndices((prev) => {
+  //     if (multi) {
+  //       return prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
+  //     } else {
+  //       return [i];
+  //     }
+  //   });
+
+  //   const dragging = selectedIndices.includes(i) ? selectedIndices : [i];
+  //   const startX = e.clientX;
+  //   const startY = e.clientY;
+  //   const zoomAtDragStart = camera.zoom;
+  //   const originalPositions = dragging.map((idx) => ({
+  //     idx,
+  //     x: shapes[idx].x,
+  //     y: shapes[idx].y,
+  //   }));
+
+  //   dragRef.current = { dragging, startX, startY, zoom: zoomAtDragStart, originalPositions };
+
+  //   function onMove(ev) {
+  //     const ref = dragRef.current;
+  //     if (!ref || !ref.originalPositions) return;
+
+  //     const dx = (ev.clientX - ref.startX) / ref.zoom;
+  //     const dy = (ev.clientY - ref.startY) / ref.zoom;
+
+  //     setShapes((prev) =>
+  //       prev.map((s, idx) => {
+  //         const orig = ref.originalPositions.find((o) => o.idx === idx);
+  //         return orig ? { ...s, x: orig.x + dx, y: orig.y + dy } : s;
+  //       })
+  //     );
+  //   }
+
+  //   function onUp() {
+  //     const ref = dragRef.current;
+  //     if (!ref || !ref.originalPositions) return;
+
+  //     const dx = (window.event.clientX - ref.startX) / ref.zoom;
+  //     const dy = (window.event.clientY - ref.startY) / ref.zoom;
+
+  //     commitShapes(
+  //       shapes.map((s, idx) => {
+  //         const orig = ref.originalPositions.find((o) => o.idx === idx);
+  //         return orig ? { ...s, x: orig.x + dx, y: orig.y + dy } : s;
+  //       })
+  //     );
+
+  //     window.removeEventListener("mousemove", onMove);
+  //     window.removeEventListener("mouseup", onUp);
+  //     dragRef.current = null;
+  //   }
+
+
+  //   window.addEventListener("mousemove", onMove);
+  //   window.addEventListener("mouseup", onUp);
+  // }
+
   function onMouseDownShape(e, i) {
-    e.stopPropagation();
-    const multi = e.shiftKey || e.metaKey || e.ctrlKey;
-    setSelectedIndices((prev) => {
-      if (multi) {
-        return prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
-      } else {
-        return [i];
-      }
+  e.stopPropagation();
+  const multi = e.shiftKey || e.metaKey || e.ctrlKey;
+  setSelectedIndices((prev) => {
+    if (multi) {
+      return prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i];
+    } else {
+      return [i];
+    }
+  });
+
+  const dragging = selectedIndices.includes(i) ? selectedIndices : [i];
+  const startX = e.clientX;
+  const startY = e.clientY;
+  const zoomAtDragStart = camera.zoom;
+  const originalPositions = dragging.map((idx) => ({
+    idx,
+    x: shapes[idx].x,
+    y: shapes[idx].y,
+  }));
+
+  dragRef.current = { dragging, startX, startY, zoom: zoomAtDragStart, originalPositions };
+
+  function onMove(ev) {
+    const ref = dragRef.current;
+    if (!ref || !ref.originalPositions) return;
+
+    const dx = (ev.clientX - ref.startX) / ref.zoom;
+    const dy = (ev.clientY - ref.startY) / ref.zoom;
+
+    // Smooth dragging update (no history commit yet)
+    setShapes((prev) =>
+      prev.map((s, idx) => {
+        const orig = ref.originalPositions.find((o) => o.idx === idx);
+        return orig ? { ...s, x: orig.x + dx, y: orig.y + dy } : s;
+      })
+    );
+  }
+
+  function onUp(ev) {
+    const ref = dragRef.current;
+    if (!ref || !ref.originalPositions) return;
+
+    const dx = (ev.clientX - ref.startX) / ref.zoom;
+    const dy = (ev.clientY - ref.startY) / ref.zoom;
+
+    // Use the *latest* state from setShapes above:
+    setShapes((prev) => {
+      const finalShapes = prev.map((s, idx) => {
+        const orig = ref.originalPositions.find((o) => o.idx === idx);
+        return orig ? { ...s, x: orig.x + dx, y: orig.y + dy } : s;
+      });
+      commitShapes(finalShapes);
+      return finalShapes;
     });
 
-    const dragging = selectedIndices.includes(i) ? selectedIndices : [i];
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const zoomAtDragStart = camera.zoom;
-    const originalPositions = dragging.map((idx) => ({
-      idx,
-      x: shapes[idx].x,
-      y: shapes[idx].y,
-    }));
-
-    dragRef.current = { dragging, startX, startY, zoom: zoomAtDragStart, originalPositions };
-
-    // function onMove(ev) {
-    //   const ref = dragRef.current;
-    //   if (!ref || !ref.originalPositions) return; // ✅ Guard
-
-    //   const dx = (ev.clientX - ref.startX) / ref.zoom;
-    //   const dy = (ev.clientY - ref.startY) / ref.zoom;
-
-    //   // setShapes((prev) =>
-    //   //   prev.map((s, idx) => {
-    //   //     const orig = ref.originalPositions.find((o) => o.idx === idx);
-    //   //     return orig ? { ...s, x: orig.x + dx, y: orig.y + dy } : s;
-    //   //   })
-    //   // );
-    //   commitShapes(
-    //     shapes.map((s, idx) => {
-    //       const orig = dragRef.current.originalPositions.find((o) => o.idx === idx);
-    //       return orig ? { ...s, x: orig.x + dx, y: orig.y + dy } : s;
-    //     })
-    //   );
-
-    // }
-    function onMove(ev) {
-      const ref = dragRef.current;
-      if (!ref || !ref.originalPositions) return;
-
-      const dx = (ev.clientX - ref.startX) / ref.zoom;
-      const dy = (ev.clientY - ref.startY) / ref.zoom;
-
-      setShapes((prev) =>
-        prev.map((s, idx) => {
-          const orig = ref.originalPositions.find((o) => o.idx === idx);
-          return orig ? { ...s, x: orig.x + dx, y: orig.y + dy } : s;
-        })
-      );
-    }
-
-    function onUp() {
-      commitShapes(shapes); // ✅ snapshot final move for undo/redo
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      dragRef.current = null;
-    }
-
-
-    // function onUp() {
-    //   window.removeEventListener("mousemove", onMove);
-    //   window.removeEventListener("mouseup", onUp);
-    //   dragRef.current = null;
-    // }
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    dragRef.current = null;
   }
+
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+}
+
+
+  // function onMouseDownHandle(e, i) {
+  //   e.stopPropagation();
+  //   setSelectedIndices([i]);
+
+  //   const shape = shapes[i];
+  //   const rect = e.currentTarget.closest("svg").getBoundingClientRect();
+  //   const zoom = camera.zoom;
+  //   const camX = camera.x;
+  //   const camY = camera.y;
+
+  //   const toWorld = (clientX, clientY) => {
+  //     const sx = clientX - rect.left;
+  //     const sy = clientY - rect.top;
+  //     return { x: sx / zoom - camX, y: sy / zoom - camY };
+  //   };
+
+  //   const start = toWorld(e.clientX, e.clientY);
+  //   const cx = shape.x;
+  //   const cy = shape.y;
+
+  //   const startVec = { x: start.x - cx, y: start.y - cy };
+  //   const startAngle = shape.angle;
+  //   const startScale = shape.scale;
+
+  //   handleRef.current = {
+  //     i,
+  //     cx,
+  //     cy,
+  //     startVec,
+  //     startAngle,
+  //     startScale,
+  //     zoom,
+  //     camX,
+  //     camY,
+  //   };
+
+  //   function onMove(ev) {
+  //     const cur = toWorld(ev.clientX, ev.clientY);
+  //     const curVec = { x: cur.x - handleRef.current.cx, y: cur.y - handleRef.current.cy };
+  //     const d0 = Math.hypot(handleRef.current.startVec.x, handleRef.current.startVec.y);
+  //     const d1 = Math.hypot(curVec.x, curVec.y);
+  //     const scale = Math.max(0.05, handleRef.current.startScale * (d1 / d0));
+  //     const a0 = Math.atan2(handleRef.current.startVec.y, handleRef.current.startVec.x);
+  //     const a1 = Math.atan2(curVec.y, curVec.x);
+  //     const deltaDeg = ((a1 - a0) * 180) / Math.PI;
+  //     updateShape(i, { scale, angle: handleRef.current.startAngle + deltaDeg });
+  //   }
+
+  //   function onUp() {
+  //     window.removeEventListener("mousemove", onMove);
+  //     window.removeEventListener("mouseup", onUp);
+  //     handleRef.current = null;
+  //   }
+
+  //   window.addEventListener("mousemove", onMove);
+  //   window.addEventListener("mouseup", onUp);
+  // }
 
   function onMouseDownHandle(e, i) {
-    e.stopPropagation();
-    setSelectedIndices([i]);
+  e.stopPropagation();
+  setSelectedIndices([i]);
 
-    const shape = shapes[i];
-    const rect = e.currentTarget.closest("svg").getBoundingClientRect();
-    const zoom = camera.zoom;
-    const camX = camera.x;
-    const camY = camera.y;
+  const shape = shapes[i];
+  const rect = e.currentTarget.closest("svg").getBoundingClientRect();
+  const zoom = camera.zoom;
+  const camX = camera.x;
+  const camY = camera.y;
 
-    const toWorld = (clientX, clientY) => {
-      const sx = clientX - rect.left;
-      const sy = clientY - rect.top;
-      return { x: sx / zoom - camX, y: sy / zoom - camY };
+  const toWorld = (clientX, clientY) => {
+    const sx = clientX - rect.left;
+    const sy = clientY - rect.top;
+    return { x: sx / zoom - camX, y: sy / zoom - camY };
+  };
+
+  const start = toWorld(e.clientX, e.clientY);
+  const cx = shape.x;
+  const cy = shape.y;
+
+  const startVec = { x: start.x - cx, y: start.y - cy };
+  const startAngle = shape.angle;
+  const startScale = shape.scale;
+
+  handleRef.current = {
+    i,
+    cx,
+    cy,
+    startVec,
+    startAngle,
+    startScale,
+    zoom,
+    camX,
+    camY,
+  };
+
+  // --- Live update for smooth preview (no commit yet) ---
+  function onMove(ev) {
+    const cur = toWorld(ev.clientX, ev.clientY);
+    const curVec = {
+      x: cur.x - handleRef.current.cx,
+      y: cur.y - handleRef.current.cy,
     };
+    const d0 = Math.hypot(handleRef.current.startVec.x, handleRef.current.startVec.y);
+    const d1 = Math.hypot(curVec.x, curVec.y);
+    const scale = Math.max(0.05, handleRef.current.startScale * (d1 / d0));
 
-    const start = toWorld(e.clientX, e.clientY);
-    const cx = shape.x;
-    const cy = shape.y;
+    const a0 = Math.atan2(handleRef.current.startVec.y, handleRef.current.startVec.x);
+    const a1 = Math.atan2(curVec.y, curVec.x);
+    const deltaDeg = ((a1 - a0) * 180) / Math.PI;
 
-    const startVec = { x: start.x - cx, y: start.y - cy };
-    const startAngle = shape.angle;
-    const startScale = shape.scale;
-
-    handleRef.current = {
-      i,
-      cx,
-      cy,
-      startVec,
-      startAngle,
-      startScale,
-      zoom,
-      camX,
-      camY,
-    };
-
-    function onMove(ev) {
-      const cur = toWorld(ev.clientX, ev.clientY);
-      const curVec = { x: cur.x - handleRef.current.cx, y: cur.y - handleRef.current.cy };
-      const d0 = Math.hypot(handleRef.current.startVec.x, handleRef.current.startVec.y);
-      const d1 = Math.hypot(curVec.x, curVec.y);
-      const scale = Math.max(0.05, handleRef.current.startScale * (d1 / d0));
-      const a0 = Math.atan2(handleRef.current.startVec.y, handleRef.current.startVec.x);
-      const a1 = Math.atan2(curVec.y, curVec.x);
-      const deltaDeg = ((a1 - a0) * 180) / Math.PI;
-      updateShape(i, { scale, angle: handleRef.current.startAngle + deltaDeg });
-    }
-
-    function onUp() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      handleRef.current = null;
-    }
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    setShapes((prev) =>
+      prev.map((s, idx) =>
+        idx === i
+          ? { ...s, scale, angle: handleRef.current.startAngle + deltaDeg }
+          : s
+      )
+    );
   }
+
+  // --- Commit final result on release ---
+  function onUp(ev) {
+    const cur = toWorld(ev.clientX, ev.clientY);
+    const curVec = {
+      x: cur.x - handleRef.current.cx,
+      y: cur.y - handleRef.current.cy,
+    };
+    const d0 = Math.hypot(handleRef.current.startVec.x, handleRef.current.startVec.y);
+    const d1 = Math.hypot(curVec.x, curVec.y);
+    const scale = Math.max(0.05, handleRef.current.startScale * (d1 / d0));
+
+    const a0 = Math.atan2(handleRef.current.startVec.y, handleRef.current.startVec.x);
+    const a1 = Math.atan2(curVec.y, curVec.x);
+    const deltaDeg = ((a1 - a0) * 180) / Math.PI;
+
+    setShapes((prev) => {
+      const finalShapes = prev.map((s, idx) =>
+        idx === i
+          ? { ...s, scale, angle: handleRef.current.startAngle + deltaDeg }
+          : s
+      );
+      commitShapes(finalShapes);
+      return finalShapes;
+    });
+
+    window.removeEventListener("mousemove", onMove);
+    window.removeEventListener("mouseup", onUp);
+    handleRef.current = null;
+  }
+
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("mouseup", onUp);
+}
+
 
   // ---------- Camera ----------
   useEffect(() => {
