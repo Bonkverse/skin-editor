@@ -669,7 +669,7 @@ function moveShapeDown(i) {
     if (!meta) return "";
     const { html, w, h } = meta;
     return `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-w / 2} ${-h / 2} ${w} ${h}" width="24" height="24" fill="${color}" stroke="${color}">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-w / 2} ${-h / 2} ${w} ${h}" width="24" height="24" style="color: ${color};">
         ${html}
       </svg>
     `;
