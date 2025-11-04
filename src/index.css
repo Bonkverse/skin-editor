@@ -194,7 +194,7 @@ html, body {
   top: calc(60px + 45%);
   right: 16px;
   width: 240px;
-  max-height: 35%;
+  max-height: 40%;
   overflow-y: auto;
   transform: translateY(120%);
 }
@@ -243,6 +243,43 @@ html, body {
   background: rgba(0, 255, 204, 0.25);
   box-shadow: 0 0 6px rgba(0, 255, 204, 0.6);
 }
+
+.move-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.move-btn {
+  flex: 1;
+  background: linear-gradient(180deg, #00695c, #004d40);
+  border: 1px solid #00e6c3;
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: #fff;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 6px rgba(0, 230, 195, 0.4);
+}
+
+.move-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #009688, #00796b);
+  box-shadow: 0 0 10px rgba(0, 230, 195, 0.7);
+  transform: translateY(-1px);
+}
+
+.move-btn:disabled,
+.move-btn.disabled {
+  background: #1a2a33;
+  color: #666;
+  border: 1px solid #333;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 
 /* Button groups */
 .flip-row, .move-row {

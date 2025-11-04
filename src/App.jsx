@@ -169,20 +169,21 @@ function ShapeProperties({ shape, index, shapes, updateShape, moveShapeUp, moveS
 
       <div className="move-row">
         <button
-          className="move-btn"
+          className={`move-btn ${index === shapes.length - 1 ? "disabled" : ""}`}
           onClick={() => moveShapeUp(index)}
           disabled={index === shapes.length - 1}
         >
           Move Up
         </button>
         <button
-          className="move-btn"
+          className={`move-btn ${index === 0 ? "disabled" : ""}`}
           onClick={() => moveShapeDown(index)}
           disabled={index === 0}
         >
           Move Down
         </button>
       </div>
+
 
       <button
         className="delete-btn"
