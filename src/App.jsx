@@ -1053,7 +1053,12 @@ export default function SkinEditor() {
 
   // ---------- Render ----------
   return (
-    <div className="editor-container">
+    <div
+    className={`editor-container 
+      ${showShapes ? "show-shapes" : ""} 
+      ${showLayers ? "show-layers" : ""}`}
+    >
+
 
       {/* === Fullscreen Canvas === */}
       <svg
