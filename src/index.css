@@ -131,7 +131,7 @@ html, body {
   top: 60px;
   right: 16px;
   width: 240px;
-  height: 70%;
+  height: 40%;
   overflow-y: auto;
   transform: translateY(-120%);
 }
@@ -141,7 +141,7 @@ html, body {
 
 /* Shape Properties appear below Layers */
 .shape-props-panel {
-  top: calc(60px + 75%);
+  top: calc(60px + 45%);
   right: 16px;
   width: 240px;
   max-height: 35%;
