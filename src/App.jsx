@@ -1209,25 +1209,38 @@ function moveShapeDown(i) {
               style={{ cursor: "move" }}
               onMouseDown={(e) => {
                 e.stopPropagation();
+
                 overlayDrag.current = {
                   startX: e.clientX,
                   startY: e.clientY,
                   startPos: { x: overlay.x, y: overlay.y },
                 };
+
                 const onMove = (ev) => {
-                  const dx = ev.clientX - overlayDrag.current.startX;
-                  const dy = ev.clientY - overlayDrag.current.startY;
-                  setOverlay((o) => ({
-                    ...o,
-                    x: overlayDrag.current.startPos.x + dx,
-                    y: overlayDrag.current.startPos.y + dy,
-                  }));
+                  // ✅ Guard against null refs
+                  if (!overlayDrag.current) return;
+
+                  // ✅ Adjust movement by zoom (optional improvement)
+                  const dx = (ev.clientX - overlayDrag.current.startX) / camera.zoom;
+                  const dy = (ev.clientY - overlayDrag.current.startY) / camera.zoom;
+
+                  setOverlay((o) => {
+                    // double-guard inside React state updater
+                    if (!overlayDrag.current) return o;
+                    return {
+                      ...o,
+                      x: overlayDrag.current.startPos.x + dx,
+                      y: overlayDrag.current.startPos.y + dy,
+                    };
+                  });
                 };
+
                 const onUp = () => {
                   window.removeEventListener("mousemove", onMove);
                   window.removeEventListener("mouseup", onUp);
                   overlayDrag.current = null;
                 };
+
                 window.addEventListener("mousemove", onMove);
                 window.addEventListener("mouseup", onUp);
               }}
