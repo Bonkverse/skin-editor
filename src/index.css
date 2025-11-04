@@ -202,6 +202,56 @@ html, body {
   transform: translateY(0);
 }
 
+/* Neon text inputs (fix typing & appearance) */
+.neon-input {
+  width: 100%;
+  background: #111a22;
+  border: 1px solid rgba(0, 255, 204, 0.3);
+  border-radius: 6px;
+  color: #00ffcc;
+  padding: 6px 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.neon-input:focus {
+  outline: none;
+  border-color: #00ffcc;
+  box-shadow: 0 0 8px rgba(0, 255, 204, 0.4);
+}
+
+/* Flip + Move Buttons */
+.flip-btn, .move-btn {
+  flex: 1;
+  margin: 4px 2px;
+  background: rgba(0, 255, 204, 0.08);
+  border: 1px solid rgba(0, 255, 204, 0.4);
+  color: #00e6c3;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 6px 0;
+  text-shadow: 0 0 3px rgba(0, 255, 204, 0.5);
+}
+.flip-btn:hover, .move-btn:hover {
+  background: rgba(0, 255, 204, 0.15);
+  box-shadow: 0 0 6px rgba(0, 255, 204, 0.4);
+  transform: translateY(-1px);
+}
+.flip-btn.active {
+  background: rgba(0, 255, 204, 0.25);
+  box-shadow: 0 0 6px rgba(0, 255, 204, 0.6);
+}
+
+/* Button groups */
+.flip-row, .move-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+
 /* ===== Panel Contents ===== */
 .panel h3 {
   color: #00e6c3;

@@ -1504,6 +1504,7 @@ function moveShapeDown(i) {
             const s = shapes[i];
             return (
               <div className="shape-props-form">
+                {/* Color */}
                 <label>
                   Color:
                   <input
@@ -1512,69 +1513,79 @@ function moveShapeDown(i) {
                     onChange={(e) => updateShape(i, { color: e.target.value })}
                   />
                 </label>
+
+                {/* Scale */}
                 <label>
                   Scale:
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    className="neon-input"
                     value={s.scale.toFixed(3)}
-                    onChange={(e) =>
-                      updateShape(i, { scale: parseFloat(e.target.value) || 0 })
-                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) updateShape(i, { scale: val });
+                    }}
                   />
                 </label>
+
+                {/* Angle */}
                 <label>
                   Angle:
                   <input
-                    type="number"
-                    step="1"
+                    type="text"
+                    className="neon-input"
                     value={s.angle.toFixed(3)}
-                    onChange={(e) =>
-                      updateShape(i, { angle: parseFloat(e.target.value) || 0 })
-                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) updateShape(i, { angle: val });
+                    }}
                   />
                 </label>
+
+                {/* X & Y */}
                 <label>
                   X Pos:
                   <input
-                    type="number"
-                    step="1"
+                    type="text"
+                    className="neon-input"
                     value={s.x.toFixed(1)}
-                    onChange={(e) =>
-                      updateShape(i, { x: parseFloat(e.target.value) || 0 })
-                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) updateShape(i, { x: val });
+                    }}
                   />
                 </label>
                 <label>
                   Y Pos:
                   <input
-                    type="number"
-                    step="1"
+                    type="text"
+                    className="neon-input"
                     value={s.y.toFixed(1)}
-                    onChange={(e) =>
-                      updateShape(i, { y: parseFloat(e.target.value) || 0 })
-                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value);
+                      if (!isNaN(val)) updateShape(i, { y: val });
+                    }}
                   />
                 </label>
+
+                {/* Flip Controls */}
                 <div className="flip-row">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={s.flipX}
-                      onChange={(e) => updateShape(i, { flipX: e.target.checked })}
-                    />{" "}
+                  <button
+                    className={`flip-btn ${s.flipX ? "active" : ""}`}
+                    onClick={() => updateShape(i, { flipX: !s.flipX })}
+                  >
                     Flip X
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={s.flipY}
-                      onChange={(e) => updateShape(i, { flipY: e.target.checked })}
-                    />{" "}
+                  </button>
+                  <button
+                    className={`flip-btn ${s.flipY ? "active" : ""}`}
+                    onClick={() => updateShape(i, { flipY: !s.flipY })}
+                  >
                     Flip Y
-                  </label>
+                  </button>
                 </div>
-                <div className="layer-move-row">
+
+                {/* Move Layer Controls */}
+                <div className="move-row">
                   <button
                     className="move-btn"
                     onClick={() => moveShapeUp(i)}
@@ -1590,6 +1601,8 @@ function moveShapeDown(i) {
                     Move Down
                   </button>
                 </div>
+
+                {/* Delete Button */}
                 <button
                   className="delete-btn"
                   onClick={() => {
@@ -1604,6 +1617,7 @@ function moveShapeDown(i) {
           })()}
         </div>
       )}
+
 
       {/* === Modals === */}
       {showShortcuts && (
