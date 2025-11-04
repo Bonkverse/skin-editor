@@ -170,10 +170,10 @@ html, body {
   width: 260px;
   height: 70%;
   overflow-y: auto;
-  transform: translateY(-120%);
+  transform: translateX(-120%);
 }
 .panel-left.open {
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
 /* Layers Panel (below right button) */
@@ -183,10 +183,10 @@ html, body {
   width: 240px;
   height: 40%;
   overflow-y: auto;
-  transform: translateY(-120%);
+  transform: translateX(120%);
 }
 .panel-right.open {
-  transform: translateY(0);
+  transform: translateX(0);
 }
 
 /* Shape Properties appear below Layers */
