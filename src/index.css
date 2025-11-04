@@ -70,15 +70,14 @@ html, body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 60%;
-  height: auto;
-  max-width: 90vw;
-  max-height: 90vh;
+  width: min(80vmin, 700px);
+  height: min(80vmin, 700px);
   background: #0d141c;
   border: none;
   display: block;
   box-shadow: 0 0 20px rgba(0, 230, 195, 0.3);
   cursor: grab;
+  aspect-ratio: 1 / 1;
 }
 
 
