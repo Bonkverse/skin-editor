@@ -311,6 +311,7 @@ export default function SkinEditor() {
 
 
   function updateShape(i, patch) {
+    if (!shapes[i]) return;
     commitShapes(
       shapes.map((s, idx) => (idx === i ? { ...s, ...patch } : s))
     );
