@@ -664,6 +664,12 @@ function moveShapeDown(i) {
     return () => window.removeEventListener("keydown", handleHelpShortcut);
   }, []);
 
+  function getShapeMarkup(id) {
+    const meta = svgCache.get(id);
+    return meta ? meta.html : "";
+  }
+
+
 // // ---------- Render ----------
 // return (
 //   <div className="editor-container">
@@ -1353,16 +1359,27 @@ function moveShapeDown(i) {
                   }}
                 >
                   {/* Thumbnail */}
-                  <img
-                    src={`/output_shapes/${s.id}.svg`}
-                    alt=""
-                    width="20"
-                    height="20"
+                  <div
+                    className="layer-thumb"
+                    dangerouslySetInnerHTML={{ __html: getShapeMarkup(s.id) }}
                     style={{
-                      opacity: s.hidden ? 0.3 : 1,
+                      width: 26,
+                      height: 26,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      overflow: "hidden",
+                      borderRadius: "4px",
+                      color: s.color,
+                      transform: `
+                        scale(${s.flipX ? -0.8 : 0.8}, ${s.flipY ? -0.8 : 0.8})
+                        rotate(${s.angle}deg)
+                      `,
+                      filter: s.hidden ? "grayscale(100%) brightness(0.4)" : "none",
                       pointerEvents: "none",
                     }}
                   />
+
 
                   {/* Name */}
                   <button
