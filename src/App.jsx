@@ -80,6 +80,8 @@ export default function SkinEditor() {
   const [showShapes, setShowShapes] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
   const [showToolbar, setShowToolbar] = useState(true);
+  const [history, setHistory] = useState([]);
+  const [future, setFuture] = useState([]);
 
   useEffect(() => {
     const seen = localStorage.getItem("seenWelcomePopup");
@@ -111,7 +113,28 @@ export default function SkinEditor() {
   const isSelected = (i) => selectedIndices.includes(i);
   const clearSelection = () => setSelectedIndices([]);
 
+  function commitShapes(newShapes) {
+    setHistory((h) => [...h.slice(-50), shapes]); // keep last 50 states
+    setFuture([]);
+    setShapes(newShapes);
+  }
+
   // ---------- Shape logic ----------
+  // function addShape(id, opts = {}) {
+  //   const newShape = {
+  //     id,
+  //     x: CANVAS_SIZE / 2,
+  //     y: CANVAS_SIZE / 2,
+  //     angle: 0,
+  //     scale: 1,
+  //     flipX: false,
+  //     flipY: false,
+  //     color: "#000000",
+  //     ...opts,
+  //   };
+  //   setShapes((prev) => [...prev, newShape]);
+  //   setSelectedIndices([shapes.length]);
+  // }
   function addShape(id, opts = {}) {
     const newShape = {
       id,
@@ -121,12 +144,54 @@ export default function SkinEditor() {
       scale: 1,
       flipX: false,
       flipY: false,
+      locked: false,
+      hidden: false,
       color: "#000000",
       ...opts,
     };
-    setShapes((prev) => [...prev, newShape]);
-    setSelectedIndices([shapes.length]);
+
+    const newShapes = [...shapes, newShape];
+    commitShapes(newShapes);
+    setSelectedIndices([newShapes.length - 1]);
+
+    if (newShapes.length === 16) {
+      alert("✨ You’ve reached Bonk’s limit of 16 shapes! Optimize your masterpiece! ✨");
+    }
   }
+
+  // Undo / Redo handlers
+  function undo() {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    setFuture((f) => [shapes, ...f]);
+    setShapes(prev);
+  }
+
+  function redo() {
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture((f) => f.slice(1));
+    setHistory((h) => [...h, shapes]);
+    setShapes(next);
+  }
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleUndoRedo = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "z" && !e.shiftKey) {
+          e.preventDefault();
+          undo();
+        } else if ((e.key === "Z" && e.shiftKey) || (e.key === "y")) {
+          e.preventDefault();
+          redo();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleUndoRedo);
+    return () => window.removeEventListener("keydown", handleUndoRedo);
+  }, [history, future, shapes]);
 
   function updateShape(i, patch) {
     setShapes((prev) =>
@@ -374,62 +439,139 @@ export default function SkinEditor() {
   }
 
   // ---------- Shape Renderer ----------
+  // function Shape({ s, i }) {
+  //   const [meta, setMeta] = useState(null);
+  //   useEffect(() => {
+  //     let alive = true;
+  //     (async () => {
+  //       const m = await loadAndNormalizeSvg(s.id);
+  //       if (alive) setMeta(m);
+  //     })();
+  //     return () => (alive = false);
+  //   }, [s.id]);
+
+  //   const tr = useMemo(() => {
+  //     const sx = s.flipX ? -s.scale : s.scale;
+  //     const sy = s.flipY ? -s.scale : s.scale;
+  //     return `translate(${s.x},${s.y}) rotate(${s.angle}) scale(${sx},${sy})`;
+  //   }, [s]);
+
+  //   const w = meta?.w ?? 50;
+  //   const h = meta?.h ?? 50;
+  //   const HANDLE = 12;
+
+  //   return (
+  //     <g
+  //       transform={tr}
+  //       onMouseDown={(e) => onMouseDownShape(e, i)}
+  //       style={{ color: s.color }}
+  //       pointerEvents="bounding-box"
+  //     >
+  //       <g dangerouslySetInnerHTML={{ __html: meta?.html || "" }} fill={s.color} stroke={s.color} />
+  //       {isSelected(i) && (
+  //         <>
+  //           <rect
+  //             x={-w / 2}
+  //             y={-h / 2}
+  //             width={w}
+  //             height={h}
+  //             fill="none"
+  //             stroke="lime"
+  //             strokeWidth={2}
+  //             pointerEvents="none"
+  //           />
+  //           <rect
+  //             x={w / 2 - HANDLE / 2}
+  //             y={-h / 2 - HANDLE / 2}
+  //             width={HANDLE}
+  //             height={HANDLE}
+  //             fill="white"
+  //             stroke="black"
+  //             onMouseDown={(e) => onMouseDownHandle(e, i)}
+  //             style={{ cursor: "nwse-resize" }}
+  //           />
+  //         </>
+  //       )}
+  //     </g>
+  //   );
+  // }
   function Shape({ s, i }) {
-    const [meta, setMeta] = useState(null);
-    useEffect(() => {
-      let alive = true;
-      (async () => {
-        const m = await loadAndNormalizeSvg(s.id);
-        if (alive) setMeta(m);
-      })();
-      return () => (alive = false);
-    }, [s.id]);
+  const [meta, setMeta] = useState(null);
 
-    const tr = useMemo(() => {
-      const sx = s.flipX ? -s.scale : s.scale;
-      const sy = s.flipY ? -s.scale : s.scale;
-      return `translate(${s.x},${s.y}) rotate(${s.angle}) scale(${sx},${sy})`;
-    }, [s]);
+  // Load SVG for the shape
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const m = await loadAndNormalizeSvg(s.id);
+      if (alive) setMeta(m);
+    })();
+    return () => (alive = false);
+  }, [s.id]);
 
-    const w = meta?.w ?? 50;
-    const h = meta?.h ?? 50;
-    const HANDLE = 12;
+  // --- Hide support ---
+  if (s.hidden) return null;
 
-    return (
+  const tr = useMemo(() => {
+    const sx = s.flipX ? -s.scale : s.scale;
+    const sy = s.flipY ? -s.scale : s.scale;
+    return `translate(${s.x},${s.y}) rotate(${s.angle}) scale(${sx},${sy})`;
+  }, [s]);
+
+  const w = meta?.w ?? 50;
+  const h = meta?.h ?? 50;
+  const HANDLE = 12;
+
+  return (
+    <g
+      transform={tr}
+      // Prevent selecting or moving locked shapes
+      onMouseDown={(e) => {
+        if (s.locked) return; // ignore clicks
+        onMouseDownShape(e, i);
+      }}
+      style={{
+        color: s.color,
+        opacity: s.locked ? 0.5 : 1, // visual cue
+        cursor: s.locked ? "not-allowed" : "pointer",
+      }}
+      pointerEvents={s.locked ? "none" : "auto"} // fully non-interactive if locked
+    >
+      {/* SVG content */}
       <g
-        transform={tr}
-        onMouseDown={(e) => onMouseDownShape(e, i)}
-        style={{ color: s.color }}
-        pointerEvents="bounding-box"
-      >
-        <g dangerouslySetInnerHTML={{ __html: meta?.html || "" }} fill={s.color} stroke={s.color} />
-        {isSelected(i) && (
-          <>
-            <rect
-              x={-w / 2}
-              y={-h / 2}
-              width={w}
-              height={h}
-              fill="none"
-              stroke="lime"
-              strokeWidth={2}
-              pointerEvents="none"
-            />
-            <rect
-              x={w / 2 - HANDLE / 2}
-              y={-h / 2 - HANDLE / 2}
-              width={HANDLE}
-              height={HANDLE}
-              fill="white"
-              stroke="black"
-              onMouseDown={(e) => onMouseDownHandle(e, i)}
-              style={{ cursor: "nwse-resize" }}
-            />
-          </>
-        )}
-      </g>
-    );
-  }
+        dangerouslySetInnerHTML={{ __html: meta?.html || "" }}
+        fill={s.color}
+        stroke={s.color}
+      />
+
+      {/* Selection box + handle */}
+      {isSelected(i) && !s.locked && (
+        <>
+          <rect
+            x={-w / 2}
+            y={-h / 2}
+            width={w}
+            height={h}
+            fill="none"
+            stroke="lime"
+            strokeWidth={2}
+            pointerEvents="none"
+          />
+          <rect
+            x={w / 2 - HANDLE / 2}
+            y={-h / 2 - HANDLE / 2}
+            width={HANDLE}
+            height={HANDLE}
+            fill="white"
+            stroke="black"
+            style={{ cursor: "nwse-resize" }}
+            onMouseDown={(e) => onMouseDownHandle(e, i)}
+          />
+        </>
+      )}
+    </g>
+  );
+}
+
 
   // ---------- Keyboard Shortcuts ----------
   useEffect(() => {
@@ -1172,7 +1314,23 @@ export default function SkinEditor() {
 
       {/* === Right Panel: Layers === */}
       <div className={`panel panel-right ${showLayers ? "open" : ""}`}>
-        <h3>Layers</h3>
+        <h3>
+          Layers ({shapes.length}/16)
+          {shapes.length >= 16 && (
+            <div
+              style={{
+                color: "#00ffcc",
+                fontSize: "0.8rem",
+                marginTop: "4px",
+                textAlign: "center",
+                textShadow: "0 0 6px rgba(0,255,200,0.5)",
+              }}
+            >
+              ✨ Bonk limit reached — optimize or keep creating! ✨
+            </div>
+          )}
+        </h3>
+
         {shapes
           .slice()
           .reverse()
@@ -1180,16 +1338,47 @@ export default function SkinEditor() {
             const realIndex = shapes.length - 1 - i;
             const selected = isSelected(realIndex);
             return (
-              <button
+              <div
                 key={i}
-                onClick={() => setSelectedIndices([realIndex])}
-                className={`layer-btn ${selected ? "active" : ""}`}
+                className={`layer-row ${selected ? "active" : ""}`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  marginBottom: "6px",
+                }}
               >
-                {`Shape ${s.id}`}
-              </button>
+                {/* Layer selection */}
+                <button
+                  onClick={() => setSelectedIndices([realIndex])}
+                  className={`layer-btn ${selected ? "active" : ""}`}
+                  style={{ flex: 1 }}
+                >
+                  Shape {s.id}
+                </button>
+
+                {/* Lock toggle */}
+                <button
+                  className="tiny-btn"
+                  title={s.locked ? "Unlock shape" : "Lock shape"}
+                  onClick={() => updateShape(realIndex, { locked: !s.locked })}
+                >
+                  {s.locked ? "🔒" : "🔓"}
+                </button>
+
+                {/* Hide toggle */}
+                <button
+                  className="tiny-btn"
+                  title={s.hidden ? "Show shape" : "Hide shape"}
+                  onClick={() => updateShape(realIndex, { hidden: !s.hidden })}
+                >
+                  {s.hidden ? "🙈" : "👁️"}
+                </button>
+              </div>
             );
           })}
       </div>
+
 
       {/* === Top Tools Bar === */}
       <div className="tools-bar">

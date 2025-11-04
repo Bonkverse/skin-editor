@@ -355,3 +355,23 @@ html, body {
   transition: background 0.2s ease;
 }
 .close-btn:hover { background: #66ffe0; }
+
+.layer-row.active {
+  background: rgba(0, 255, 204, 0.08);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.tiny-btn {
+  background: none;
+  border: none;
+  color: #00e6c3;
+  cursor: pointer;
+  font-size: 16px;
+  transition: transform 0.2s, color 0.2s;
+}
+.tiny-btn:hover {
+  transform: scale(1.15);
+  color: #00ffcc;
+}
+
