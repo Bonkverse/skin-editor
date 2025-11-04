@@ -391,12 +391,27 @@ function moveShapeDown(i) {
     const handleMouseUp = () => (isPanning = false);
     const handleWheel = (e) => {
       e.preventDefault();
+
+      const rect = svg.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
       const zoomAmount = e.deltaY * -0.001;
+
       setCamera((prev) => {
         const newZoom = Math.min(Math.max(prev.zoom + zoomAmount, 0.2), 5);
-        return { ...prev, zoom: newZoom };
+
+        // Convert mouse screen coords → world coords before zoom
+        const worldX = (mouseX / prev.zoom) - prev.x;
+        const worldY = (mouseY / prev.zoom) - prev.y;
+
+        // Adjust camera to keep zoom centered around cursor
+        const newX = mouseX / newZoom - worldX;
+        const newY = mouseY / newZoom - worldY;
+
+        return { x: newX, y: newY, zoom: newZoom };
       });
     };
+
 
     svg.addEventListener("mousedown", handleMouseDown);
     window.addEventListener("mousemove", handleMouseMove);
