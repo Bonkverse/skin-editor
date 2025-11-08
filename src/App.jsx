@@ -704,7 +704,7 @@ function moveShapeDown(i) {
                 cursor: "nesw-resize",
                 pointerEvents: "all", // ensures it's clickable
               }}
-              onMouseDown={(e) => onHandleMouseDown(e, i, "topright")}
+              onMouseDown={(e) => onMouseDownHandle(e, i, "topright")}
             />
           </>
         )}
