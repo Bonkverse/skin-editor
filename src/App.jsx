@@ -422,8 +422,11 @@ function moveShapeDown(i) {
   const toWorld = (clientX, clientY) => {
     const sx = clientX - rect.left;
     const sy = clientY - rect.top;
-    return { x: sx / zoom - camX, y: sy / zoom - camY };
+    const worldX = (sx - window.innerWidth / 2 + CANVAS_SIZE / 2 - camX) / zoom;
+    const worldY = (sy - window.innerHeight / 2 + CANVAS_SIZE / 2 - camY) / zoom;
+    return { x: worldX, y: worldY };
   };
+
 
   const start = toWorld(e.clientX, e.clientY);
   const cx = shape.x;
