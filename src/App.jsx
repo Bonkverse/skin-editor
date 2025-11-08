@@ -447,25 +447,18 @@ function moveShapeDown(i) {
   // --- Live update for smooth preview (no commit yet) ---
   function onMove(ev) {
     const ref = handleRef.current;
-    if (!ref) return; // ✅ Prevent null crash
+    if (!ref) return;
 
     const cur = toWorld(ev.clientX, ev.clientY);
     const curVec = { x: cur.x - ref.cx, y: cur.y - ref.cy };
+
     const d0 = Math.hypot(ref.startVec.x, ref.startVec.y);
     const d1 = Math.hypot(curVec.x, curVec.y);
-  //   const scale = Math.max(0.05, ref.startScale * (d1 / d0));
+    const rawScale = Math.max(0.05, ref.startScale * (d1 / d0));
 
-  //   const a0 = Math.atan2(ref.startVec.y, ref.startVec.x);
-  //   const a1 = Math.atan2(curVec.y, curVec.x);
-  //   const deltaDeg = ((a1 - a0) * 180) / Math.PI;
-
-  //   setShapes((prev) =>
-  //     prev.map((s, idx) =>
-  //       idx === i ? { ...s, scale, angle: ref.startAngle + deltaDeg } : s
-  //     )
-  //   );
-  // }
-  const rawDeltaDeg = ((a1 - a0) * 180) / Math.PI;
+    const a0 = Math.atan2(ref.startVec.y, ref.startVec.x);
+    const a1 = Math.atan2(curVec.y, curVec.x);
+    const rawDeltaDeg = ((a1 - a0) * 180) / Math.PI;
 
     // === modifier-key behavior ===
     let scale = rawScale;
@@ -479,12 +472,14 @@ function moveShapeDown(i) {
       scale = ref.startScale;
     }
 
+    // ✅ live updates while dragging
     setShapes((prev) =>
       prev.map((s, idx) =>
         idx === i ? { ...s, scale, angle } : s
       )
     );
   }
+
 
   function onUp(ev) {
     const ref = handleRef.current;
@@ -890,7 +885,7 @@ function moveShapeDown(i) {
           }
         }}
       >
-        <g transform={`scale(${camera.zoom}) translate(${camera.x},${camera.y})`}>
+        <g transform={`translate(${camera.x},${camera.y}) scale(${camera.zoom})`}>
           <defs>
             <clipPath id="playerClip">
               <circle cx={CANVAS_SIZE / 2} cy={CANVAS_SIZE / 2} r={BALL_RADIUS_PX} />
