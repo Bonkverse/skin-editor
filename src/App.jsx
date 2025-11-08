@@ -558,8 +558,8 @@ function moveShapeDown(i) {
       lastY = e.clientY;
       setCamera((prev) => ({
         ...prev,
-        x: prev.x + dx / prev.zoom,
-        y: prev.y + dy / prev.zoom,
+        x: prev.x + dx / (prev.zoom * 2),
+        y: prev.y + dy / (prev.zoom * 2),
       }));
     };
 
@@ -570,7 +570,7 @@ function moveShapeDown(i) {
       const rect = svg.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-      const zoomAmount = e.deltaY * -0.001;
+      const zoomAmount = e.deltaY * -0.0005;
 
       setCamera((prev) => {
         const newZoom = Math.min(Math.max(prev.zoom + zoomAmount, 0.2), 5);
@@ -887,9 +887,14 @@ function moveShapeDown(i) {
           }
         }}
       >
-        <g transform={`translate(${camera.x + window.innerWidth / 2 - CANVAS_SIZE / 2},
-                         ${camera.y + window.innerHeight / 2 - CANVAS_SIZE / 2}) 
-               scale(${camera.zoom})`}>
+        <g
+          transform={`
+            translate(${window.innerWidth / 2 - CANVAS_SIZE / 2 + camera.x},
+                      ${window.innerHeight / 2 - CANVAS_SIZE / 2 + camera.y})
+            scale(${camera.zoom})
+          `}
+        />
+        <g>
 
 
           <defs>
