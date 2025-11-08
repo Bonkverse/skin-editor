@@ -88,7 +88,11 @@ function ShapeProperties({ shape, index, shapes, updateShape, moveShapeUp, moveS
       <div style={{display:"flex"}}>
         Color:
         <div style={{"margin-left": "auto", position:"relative"}}>
-          <button className="color-button" onClick={() => setShowPicker(((v) => !v))}></button>
+          <button
+            className="color-button"
+            onClick={() => setShowPicker(((v) => !v))}
+            style={{background: shape.color}}
+            />
         </div>
       </div>
 
@@ -1662,9 +1666,7 @@ function moveShapeDown(i) {
             }}>
             <ColorPicker 
               color = {shapes[selectedIndices[0]].color}
-              setColor = {
-                (color) => updateShape(selectedIndices[0], { color: color })
-              }
+              setColor = {(color) => updateShape(selectedIndices[0], { color: color })}
             />
           </div>
         </>
