@@ -885,7 +885,7 @@ function moveShapeDown(i) {
           }
         }}
       >
-        <g transform={`translate(${camera.x},${camera.y}) scale(${camera.zoom})`}>
+        <g transform={`scale(${camera.zoom}) translate(${camera.x},${camera.y})`}>
           <defs>
             <clipPath id="playerClip">
               <circle cx={CANVAS_SIZE / 2} cy={CANVAS_SIZE / 2} r={BALL_RADIUS_PX} />
