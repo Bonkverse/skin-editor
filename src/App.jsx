@@ -63,7 +63,8 @@ async function loadAndNormalizeSvg(id) {
   const cx = minX + vbW / 2;
   const cy = minY + vbH / 2;
   const inner = root.innerHTML;
-  const html = `<g transform="translate(${-cx},${-cy})">${inner}</g>`;
+  // const html = `<g transform="translate(${-cx},${-cy})">${inner}</g>`;
+  const html = `<g transform="translate(-25, -25)">${inner}</g>`;
   const meta = { html, w: vbW, h: vbH };
   svgCache.set(id, meta);
   return meta;
@@ -576,7 +577,7 @@ function moveShapeDown(i) {
         scale: +(s.scale / BONK_SCALE_FACTOR).toFixed(6),
         angle: +s.angle.toFixed(6),
         x: +(((s.x - CANVAS_SIZE / 2) / BONK_X_POS_FACTOR)).toFixed(6),
-        y: -(((s.y - CANVAS_SIZE / 2) / BONK_Y_POS_FACTOR)).toFixed(6),
+        y: +(((s.y - CANVAS_SIZE / 2) / BONK_Y_POS_FACTOR)).toFixed(6),
         flipX: !!s.flipX,
         flipY: !!s.flipY,
         color: parseInt(s.color.replace("#", ""), 16),
@@ -607,7 +608,7 @@ function moveShapeDown(i) {
           scale: parseFloat(l.scale) * BONK_SCALE_FACTOR,
           angle: parseFloat(l.angle),
           x: parseFloat(l.x) * BONK_X_POS_FACTOR + CANVAS_SIZE / 2,
-          y: -(parseFloat(l.y) * BONK_Y_POS_FACTOR) + CANVAS_SIZE / 2,
+          y: parseFloat(l.y) * BONK_Y_POS_FACTOR + CANVAS_SIZE / 2,
           flipX: !!l.flipX,
           flipY: !!l.flipY,
           color: `#${l.color.toString(16).padStart(6, "0")}`,
