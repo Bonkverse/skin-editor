@@ -567,6 +567,28 @@ function moveShapeDown(i) {
     };
 
     const handleMouseUp = () => (isPanning = false);
+    // const handleWheel = (e) => {
+    //   e.preventDefault();
+
+    //   const rect = svg.getBoundingClientRect();
+    //   const mouseX = e.clientX - rect.left;
+    //   const mouseY = e.clientY - rect.top;
+    //   const zoomAmount = e.deltaY * -0.001;
+
+    //   setCamera((prev) => {
+    //     const newZoom = Math.min(Math.max(prev.zoom + zoomAmount, 0.2), 5);
+
+    //     // Convert mouse screen coords → world coords before zoom
+    //     const worldX = (mouseX / prev.zoom) - prev.x;
+    //     const worldY = (mouseY / prev.zoom) - prev.y;
+
+    //     // Adjust camera to keep zoom centered around cursor
+    //     const newX = mouseX / newZoom - worldX;
+    //     const newY = mouseY / newZoom - worldY;
+
+    //     return { x: newX, y: newY, zoom: newZoom };
+    //   });
+    // };
     const handleWheel = (e) => {
       e.preventDefault();
 
@@ -578,17 +600,22 @@ function moveShapeDown(i) {
       setCamera((prev) => {
         const newZoom = Math.min(Math.max(prev.zoom + zoomAmount, 0.2), 5);
 
-        // Convert mouse screen coords → world coords before zoom
-        const worldX = (mouseX / prev.zoom) - prev.x;
-        const worldY = (mouseY / prev.zoom) - prev.y;
+        // Center of visible canvas in screen space
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2;
 
-        // Adjust camera to keep zoom centered around cursor
-        const newX = mouseX / newZoom - worldX;
-        const newY = mouseY / newZoom - worldY;
+        // Convert mouse position into *canvas-space* coordinates
+        const worldX = (mouseX - cx + CANVAS_SIZE / 2 - prev.x) / prev.zoom;
+        const worldY = (mouseY - cy + CANVAS_SIZE / 2 - prev.y) / prev.zoom;
+
+        // Keep zoom centered around cursor
+        const newX = -(worldX * newZoom - (mouseX - cx + CANVAS_SIZE / 2));
+        const newY = -(worldY * newZoom - (mouseY - cy + CANVAS_SIZE / 2));
 
         return { x: newX, y: newY, zoom: newZoom };
       });
     };
+
 
 
     svg.addEventListener("mousedown", handleMouseDown);
