@@ -887,14 +887,9 @@ function moveShapeDown(i) {
           }
         }}
       >
-        <g
-          transform={`
-            translate(${window.innerWidth / 2 - CANVAS_SIZE / 2 + camera.x},
-                      ${window.innerHeight / 2 - CANVAS_SIZE / 2 + camera.y})
-            scale(${camera.zoom})
-          `}
-        />
-        <g>
+        <g transform={`translate(${camera.x + window.innerWidth / 2 - CANVAS_SIZE / 2},
+                         ${camera.y + window.innerHeight / 2 - CANVAS_SIZE / 2}) 
+               scale(${camera.zoom})`}>
 
 
           <defs>
