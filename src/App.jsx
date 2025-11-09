@@ -1024,23 +1024,21 @@ export default function SkinEditor() {
           )}
 
           {/* Shapes */}
+          {/* --- Clipped shapes (everything not selected) --- */}
           <g clipPath="url(#playerClip)">
-            {/* Always render base z-order */}
-            {shapes.map((s, i) => (
-              <Shape key={i} s={s} i={i} />
-            ))}
-
-            {/* Bring selected shapes to front only when mouse is inside canvas and not reordering */}
-            {mouseInsideCanvas && !isReordering &&
-              shapes.map((s, i) =>
-                isSelected(i) ? <Shape key={`${i}-sel`} s={s} i={i} /> : null
-              )}
+            {shapes.map((s, i) =>
+              !isSelected(i) ? <Shape key={i} s={s} i={i} /> : null
+            )}
           </g>
 
-
-        </g>
-      </svg>
-
+          {/* --- Unclipped selected shapes on top (fully visible) --- */}
+          {mouseInsideCanvas && !isReordering &&
+            shapes.map((s, i) =>
+              isSelected(i) ? <Shape key={`${i}-sel`} s={s} i={i} /> : null
+            )}
+          </g>
+        </svg>
+        
       {/* === Floating Toggles === */}
       <button className="dock-btn left" onClick={() => setShowShapes((v) => !v)}>Shapes</button>
       <button className="dock-btn right" onClick={() => setShowLayers((v) => !v)}>Layers</button>
