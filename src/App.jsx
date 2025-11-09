@@ -1024,25 +1024,21 @@ export default function SkinEditor() {
           )}
 
           {/* Shapes */}
-          {/* === Shapes Rendering === */}
-          {/* 1️⃣ Always render non-selected shapes clipped */}
+          {/* Shapes Rendering Logic */}
+          {/* --- Always clip non-selected shapes --- */}
           <g clipPath="url(#playerClip)">
-            {shapes.map((s, i) =>
-              !isSelected(i) ? <Shape key={i} s={s} i={i} /> : null
-            )}
+            {shapes.map((s, i) => (
+              <Shape key={i} s={s} i={i} />
+            ))}
           </g>
 
-          {/* 2️⃣ Selected shapes are always unclipped */}
-          {/*    If mouse inside → brought to front */}
-          {/*    If mouse outside → stay at z-position */}
-          {!isReordering &&
-            shapes.map((s, i) => {
-              if (!isSelected(i)) return null;
-              // if inside canvas, render again at top (so on front)
-              if (mouseInsideCanvas) return <Shape key={`${i}-sel`} s={s} i={i} />;
-              // if outside canvas, render only once (their true z-order)
-              return <Shape key={`${i}-sel`} s={s} i={i} />;
-            })}
+          {/* --- Selected shapes re-rendered on top (unclipped) only when: --- */}
+          {/*     1. Mouse is inside canvas (editing mode) */}
+          {/*     2. Not currently reordering layers */}
+          {mouseInsideCanvas && !isReordering &&
+            shapes.map((s, i) =>
+              isSelected(i) ? <Shape key={`${i}-sel`} s={s} i={i} /> : null
+            )}
           </g>
         </svg>
 
