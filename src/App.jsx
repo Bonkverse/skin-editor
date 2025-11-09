@@ -213,6 +213,8 @@ export default function SkinEditor() {
   const [showToolbar, setShowToolbar] = useState(true);
   const [history, setHistory] = useState([]);
   const [future, setFuture] = useState([]);
+  const [isReordering, setIsReordering] = useState(false);
+
 
   useEffect(() => {
     const seen = localStorage.getItem("seenWelcomePopup");
@@ -324,21 +326,26 @@ export default function SkinEditor() {
     );
   }
 
-function moveShapeUp(i) {
-  if (i >= shapes.length - 1) return;
-  const newShapes = [...shapes];
-  [newShapes[i], newShapes[i + 1]] = [newShapes[i + 1], newShapes[i]];
-  commitShapes(newShapes);
-  setSelectedIndices([i + 1]);
-}
+  function moveShapeUp(i) {
+    if (i >= shapes.length - 1) return;
+    setIsReordering(true);
+    const newShapes = [...shapes];
+    [newShapes[i], newShapes[i + 1]] = [newShapes[i + 1], newShapes[i]];
+    commitShapes(newShapes);
+    setSelectedIndices([i + 1]);
+    setTimeout(() => setIsReordering(false), 150);
+  }
 
-function moveShapeDown(i) {
-  if (i <= 0) return;
-  const newShapes = [...shapes];
-  [newShapes[i], newShapes[i - 1]] = [newShapes[i - 1], newShapes[i]];
-  commitShapes(newShapes);
-  setSelectedIndices([i - 1]);
-}
+  function moveShapeDown(i) {
+    if (i <= 0) return;
+    setIsReordering(true);
+    const newShapes = [...shapes];
+    [newShapes[i], newShapes[i - 1]] = [newShapes[i - 1], newShapes[i]];
+    commitShapes(newShapes);
+    setSelectedIndices([i - 1]);
+    setTimeout(() => setIsReordering(false), 150);
+  }
+
 
   // ---------- Multi-select drag ----------
   function onMouseDownShape(e, i) {
@@ -372,6 +379,12 @@ function moveShapeDown(i) {
     const dx = (ev.clientX - ref.startX) / ref.zoom;
     const dy = (ev.clientY - ref.startY) / ref.zoom;
 
+    // --- Modifier key behavior ---
+    // Shift → horizontal only
+    // Ctrl / Cmd → vertical only
+    if (ev.shiftKey) dy = 0;
+    if (ev.ctrlKey || ev.metaKey) dx = 0;
+
     // Smooth dragging update (no history commit yet)
     setShapes((prev) =>
       prev.map((s, idx) => {
@@ -389,6 +402,9 @@ function moveShapeDown(i) {
 
     const dx = (ev.clientX - ref.startX) / ref.zoom;
     const dy = (ev.clientY - ref.startY) / ref.zoom;
+
+    if (ev.shiftKey) dy = 0;
+    if (ev.ctrlKey || ev.metaKey) dx = 0;
 
     // Use the *latest* state from setShapes above:
     setShapes((prev) => {
@@ -999,19 +1015,19 @@ function moveShapeDown(i) {
           )}
 
           {/* Shapes */}
-          {/* Non-selected shapes (clipped) */}
           <g clipPath="url(#playerClip)">
-            {shapes.map((s, i) =>
-              !isSelected(i) ? <Shape key={i} s={s} i={i} /> : null
-            )}
+            {/* Base layer render — always keep the real z-order */}
+            {shapes.map((s, i) => (
+              <Shape key={i} s={s} i={i} />
+            ))}
+
+            {/* Bring selected shapes to front only when NOT reordering */}
+            {!isReordering &&
+              shapes.map((s, i) =>
+                isSelected(i) ? <Shape key={`${i}-sel`} s={s} i={i} /> : null
+              )}
           </g>
 
-          {/* Selected shapes (unclipped, always visible) */}
-          <g>
-            {shapes.map((s, i) =>
-              isSelected(i) ? <Shape key={`${i}-sel`} s={s} i={i} /> : null
-            )}
-          </g>
         </g>
       </svg>
 
