@@ -214,6 +214,8 @@ export default function SkinEditor() {
   const [history, setHistory] = useState([]);
   const [future, setFuture] = useState([]);
   const [isReordering, setIsReordering] = useState(false);
+  const [mouseInsideCanvas, setMouseInsideCanvas] = useState(true);
+
 
 
   useEffect(() => {
@@ -349,6 +351,7 @@ export default function SkinEditor() {
 
   // ---------- Multi-select drag ----------
   function onMouseDownShape(e, i) {
+  e.preventDefault();
   e.stopPropagation();
   const multi = e.shiftKey || e.metaKey || e.ctrlKey;
   setSelectedIndices((prev) => {
@@ -372,12 +375,14 @@ export default function SkinEditor() {
   dragRef.current = { dragging, startX, startY, zoom: zoomAtDragStart, originalPositions };
 
   function onMove(ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
     if (!dragRef.current) return;
     const ref = dragRef.current;
     if (!ref || !ref.originalPositions) return;
 
-    const dx = (ev.clientX - ref.startX) / ref.zoom;
-    const dy = (ev.clientY - ref.startY) / ref.zoom;
+    let dx = (ev.clientX - ref.startX) / ref.zoom;
+    let dy = (ev.clientY - ref.startY) / ref.zoom;
 
     // --- Modifier key behavior ---
     // Shift → horizontal only
@@ -395,13 +400,15 @@ export default function SkinEditor() {
   }
 
   function onUp(ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
     if (!dragRef.current) return;
 
     const ref = dragRef.current;
     if (!ref || !ref.originalPositions) return;
 
-    const dx = (ev.clientX - ref.startX) / ref.zoom;
-    const dy = (ev.clientY - ref.startY) / ref.zoom;
+    let dx = (ev.clientX - ref.startX) / ref.zoom;
+    let dy = (ev.clientY - ref.startY) / ref.zoom;
 
     if (ev.shiftKey) dy = 0;
     if (ev.ctrlKey || ev.metaKey) dx = 0;
@@ -932,6 +939,8 @@ export default function SkinEditor() {
             reader.readAsDataURL(file);
           }
         }}
+        onMouseEnter={() => setMouseInsideCanvas(true)}
+        onMouseLeave={() => setMouseInsideCanvas(false)}
       >
         <g transform={`translate(${camera.x + window.innerWidth / 2 - CANVAS_SIZE / 2},
                          ${camera.y + window.innerHeight / 2 - CANVAS_SIZE / 2}) 
@@ -1016,17 +1025,18 @@ export default function SkinEditor() {
 
           {/* Shapes */}
           <g clipPath="url(#playerClip)">
-            {/* Base layer render — always keep the real z-order */}
+            {/* Always render base z-order */}
             {shapes.map((s, i) => (
               <Shape key={i} s={s} i={i} />
             ))}
 
-            {/* Bring selected shapes to front only when NOT reordering */}
-            {!isReordering &&
+            {/* Bring selected shapes to front only when mouse is inside canvas and not reordering */}
+            {mouseInsideCanvas && !isReordering &&
               shapes.map((s, i) =>
                 isSelected(i) ? <Shape key={`${i}-sel`} s={s} i={i} /> : null
               )}
           </g>
+
 
         </g>
       </svg>
