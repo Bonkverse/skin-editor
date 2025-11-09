@@ -1035,7 +1035,7 @@ export default function SkinEditor() {
           {/* --- Selected shapes re-rendered on top (unclipped) only when: --- */}
           {/*     1. Mouse is inside canvas (editing mode) */}
           {/*     2. Not currently reordering layers */}
-          {mouseInsideCanvas && !isReordering &&
+          {!isReordering &&
             shapes.map((s, i) =>
               isSelected(i) ? <Shape key={`${i}-sel`} s={s} i={i} /> : null
             )}
