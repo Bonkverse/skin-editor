@@ -13,6 +13,13 @@
   width: 100% !important;
 }
 
+.react-colorful__pointer {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #00ffcc;
+  box-shadow: 0 0 6px rgba(0, 255, 204, 0.8);
+}
+
 .color-inputs input {
   width: 40px;
   font-size: 0.7rem;
@@ -21,9 +28,9 @@
 
 .tabs {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   font-weight: bold;
-  color: #ff4ea3;
+  color: #00ffcc;
   font-size: 0.9rem;
   margin-bottom: 4px;
 }
@@ -34,13 +41,13 @@
 }
 
 .tab.active {
-  color: #ff4ea3;
-  text-shadow: 0 0 8px rgba(255, 78, 163, 0.8);
+  color: #00ffcc;
+  text-shadow: 0 0 8px rgba(0, 255, 204, 0.8);
 }
 
 .color-inputs {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   gap: 5px;
 }
 
