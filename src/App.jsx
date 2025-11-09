@@ -1070,7 +1070,7 @@ export default function SkinEditor() {
       </div>
 
       {/* === Right Panel: Layers === */}
-      <div className={`panel panel-right ${showLayers ? "open" : ""}`}>
+      <div className={`panel layers-panel ${showLayers ? "open" : ""}`}>
         <h3>
           Layers ({shapes.length}/16)
           {shapes.length >= 16 && (
@@ -1261,7 +1261,7 @@ export default function SkinEditor() {
 
       {/* === Shape Properties (auto-slide) === */}
       {selectedIndices.length === 1 && (
-        <div className="panel panel-right open shape-props-panel">
+        <div className="shape-props-panel open">
           <h3>Shape Properties</h3>
           <ShapeProperties
             shape={shapes[selectedIndices[0]]}

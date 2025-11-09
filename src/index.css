@@ -180,56 +180,54 @@ html, body {
   transform: translateX(0);
 }
 
-
-/* Shape Properties Panel (ABOVE Layers) */
+/* ===== Shape Properties Panel (TOP-RIGHT) ===== */
 .shape-props-panel {
   position: absolute;
-  top: 100px; /* slightly lower so it doesn't overlap the button */
+  top: 100px;                /* below top bar */
   right: 16px;
   width: 420px;
-  height: 50%;
+  height: 55%;               /* taller for editing */
   overflow-y: auto;
   background: rgba(26, 39, 51, 0.95);
   border: 2px solid #009688;
   border-radius: 12px;
   box-shadow: 0 0 25px rgba(0, 230, 195, 0.4);
   color: #ddd;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   transform: translateX(120%);
-  transition: transform 0.3s ease;
-  z-index: 40;
+  z-index: 41;               /* above layers */
 }
 
 .shape-props-panel.open {
   transform: translateX(0);
 }
 
-/* Layers Panel (BELOW Shape Properties) */
-.panel-right {
+/* ===== Layers Panel (BOTTOM-RIGHT) ===== */
+.layers-panel {
   position: absolute;
-  top: calc(100px + 50% + 20px); /* below shape props + small gap */
+  bottom: 16px;              /* anchor to bottom instead of top */
   right: 16px;
   width: 420px;
-  height: 25%;
+  height: 30%;               /* smaller than props */
   overflow-y: auto;
   background: rgba(26, 39, 51, 0.95);
   border: 2px solid #009688;
   border-radius: 12px;
   box-shadow: 0 0 25px rgba(0, 230, 195, 0.4);
   color: #ddd;
+  transition: transform 0.3s ease, opacity 0.3s ease;
   transform: translateX(120%);
-  transition: transform 0.3s ease;
-  z-index: 39; /* slightly under shape props */
+  z-index: 40;
 }
 
-.panel-right.open {
+.layers-panel.open {
   transform: translateX(0);
 }
 
-/* Adjust Layers button position */
+/* Move the Layers button down a bit */
 .dock-btn.right {
-  top: 70px; /* lower it a bit to match the new panels */
+  top: 80px;
 }
-
 
 /* Neon text inputs (fix typing & appearance) */
 .neon-input {
