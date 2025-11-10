@@ -55,6 +55,7 @@
 .color-row {
   display: flex;
   justify-content: space-between;
+  gap: 12px;
 }
 
 /* Each input cell */
