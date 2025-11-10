@@ -206,7 +206,7 @@ html, body {
 /* ===== Layers Button (BETWEEN PANELS) ===== */
 .dock-btn.right {
   position: absolute;
-  top: calc(80px + 55%); /* between panels */
+  top: calc(80px + 54%); /* between panels */
   right: 16px;
   z-index: 42; /* above panels */
 }
@@ -214,7 +214,7 @@ html, body {
 /* ===== Layers Panel (BOTTOM-RIGHT) ===== */
 .layers-panel {
   position: absolute;
-  top: calc(130px + 55%); /* below button with spacing */
+  top: calc(120px + 54%); /* below button with spacing */
   right: 16px;
   width: 260px;
   height: 30%;
