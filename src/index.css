@@ -171,8 +171,8 @@ html, body {
 .panel-left {
   top: 60px;
   left: 16px;
-  width: 260px;
-  height: 70%;
+  width: 320px;
+  height: 55%;
   overflow-y: auto;
   transform: translateX(-120%);
 }
