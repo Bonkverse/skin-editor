@@ -41,6 +41,8 @@ export default function ColorPicker({ id, color, setColor, pickerMode, setPicker
       let initPos = rgbToSliderPos(rgb.r, rgb.b, rgb.b, pickerMode);
       setHueSliderAngle(initPos.angle);
       setInnerSliderPos({x: initPos.x, y: initPos.y});
+      setRgbInput(`${rgb.r}, ${rgb.g}, ${rgb.b}`);
+      setHexInput(rgbToHex(rgb));
     }
     
     const canvas = canvasRef.current;

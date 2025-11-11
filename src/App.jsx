@@ -1273,7 +1273,7 @@ export default function SkinEditor() {
 
       {/* === Shape Properties (auto-slide) === */}
       {selectedIndices.length === 1 && (
-        <div className="shape-props-panel open ">
+        <div className="shape-props-panel open">
           <h3>Shape Properties</h3>
           <ShapeProperties
             shape={shapes[selectedIndices[0]]}
