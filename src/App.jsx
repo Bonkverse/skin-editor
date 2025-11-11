@@ -211,6 +211,7 @@ export default function SkinEditor() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showPropPicker, setShowPropPicker] = useState(false);
   const [showBasePicker, setShowBasePicker] = useState(false);
+  const [pickerMode, setPickerMode] = useState(0);
   
   // UI state
   const [showShapes, setShowShapes] = useState(false);
@@ -1636,8 +1637,11 @@ function moveShapeDown(i) {
           left: "calc(50% - 300px)"
         }}>
         <ColorPicker
+          id = {0}
           color = {baseColor}
           setColor = {setBaseColor}
+          pickerMode = {pickerMode}
+          setPickerMode = {setPickerMode}
         />
       </div>
 
@@ -1664,9 +1668,12 @@ function moveShapeDown(i) {
               bottom: "57px",
               display: showPropPicker ? "block" : "none"
             }}>
-            <ColorPicker 
+            <ColorPicker
+              id = {selectedIndices[0]}
               color = {shapes[selectedIndices[0]].color}
               setColor = {(color) => updateShape(selectedIndices[0], { color: color })}
+              pickerMode = {pickerMode}
+              setPickerMode = {setPickerMode}
             />
           </div>
         </>
