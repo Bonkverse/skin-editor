@@ -170,3 +170,12 @@ Pull requests are welcome --- especially for:
 -   Coordinate accuracy improvements
 
 Please keep changes focused and well-documented.
+
+
+🤖 AI Usage
+---------------
+
+Yes this code was made with the help of ChatGPT. What does this mean? It means that most likely the code you're about to see is gonna be shit.
+The purpose of making this repo public and open source is to step away from AI-generated code into something useful and made by community members.
+
+We hope that you'll bear with us as we undergo this transition of being more community and developer friendly :)
