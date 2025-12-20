@@ -79,6 +79,6 @@ export function encodeSkin(json) {
 // Example usage in Node:
 // import fs from "fs";
 // import { encodeSkin } from "./encodeSkin.js";
-// const json = JSON.parse(fs.readFileSync("./Bonkverse Skin (1).json", "utf8"));
+// const json = JSON.parse(fs.readFileSync("skinlayers.json", "utf8"));
 // const code = encodeSkin(json);
 // console.log(code);
