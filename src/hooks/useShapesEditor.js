@@ -1,6 +1,7 @@
 // src/hooks/useShapesEditor.js
 import { useState } from "react";
 import { CANVAS_SIZE } from "../bonk/constants";
+import { svgCache } from "../utils/svgCache.js";
 
 export function useShapesEditor() {
   // ===== STATE =====
@@ -9,6 +10,8 @@ export function useShapesEditor() {
   const [history, setHistory] = useState([]);
   const [future, setFuture] = useState([]);
   const [isReordering, setIsReordering] = useState(false);
+  // const [isDragging, setIsDragging] = useState(false);
+
 
   // ===== HELPERS =====
   const clearSelection = () => setSelectedIndices([]);
@@ -23,8 +26,8 @@ export function useShapesEditor() {
   function addShape(id, opts = {}) {
     const newShape = {
       id,
-      x: CANVAS_SIZE / 2,
-      y: CANVAS_SIZE / 2,
+      x: 0,
+      y: 0,
       angle: 0,
       scale: 1,
       flipX: false,
@@ -46,14 +49,17 @@ export function useShapesEditor() {
 
   function updateShape(index, patch) {
     if (!shapes[index]) return;
-    commitShapes(
-      shapes.map((s, i) => (i === index ? { ...s, ...patch } : s))
-    );
-  }
+      commitShapes(
+        shapes.map((s, i) => (i === index ? { ...s, ...patch } : s))
+      );
+    }
 
   function isSelected(index) {
+    const s = shapes[index];
+    if (!s || s.hidden) return false;
     return selectedIndices.includes(index);
   }
+
 
 
   function undo() {
@@ -100,6 +106,46 @@ export function useShapesEditor() {
     setTimeout(() => setIsReordering(false), 150);
   }
 
+  // function getShapeMarkup(id, color = "#000") {
+  //     const meta = svgCache.get(id);
+  //     if (!meta) return "";
+  //     const { html, w, h } = meta;
+  //     return `
+  //       <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-w / 2} ${-h / 2} ${w} ${h}" width="24" height="24" style="color: ${color};">
+  //         ${html}
+  //       </svg>
+  //     `;
+  // }
+
+  function getShapeMarkup(id, color = "#000", size = 24) {
+    const meta = svgCache.get(id);
+    if (!meta) return "";
+
+    const { html, w, h } = meta;
+    const scale = (size * 0.85) / Math.max(w, h);
+
+    return `
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="${size}"
+        height="${size}"
+        viewBox="${-size / 2} ${-size / 2} ${size} ${size}"
+      >
+        <g
+          transform="scale(${scale})"
+          fill="currentColor"
+          stroke="currentColor"
+          style="color: ${color};"
+        >
+          ${html}
+        </g>
+      </svg>
+    `;
+  }
+
+
+
+
   // ===== PUBLIC API =====
   return {
     // state
@@ -125,5 +171,6 @@ export function useShapesEditor() {
     // advanced
     commitShapes,
     setShapes, // exposed intentionally (importJSON needs this)
+    getShapeMarkup,
   };
 }

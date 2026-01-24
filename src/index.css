@@ -67,15 +67,14 @@ html, body {
 
 /* Canvas fills entire screen */
 .editor-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  /* width: 700px;
+  height: 700px; */
+  width: 100vw;
+  height: 100vh;
   background: #0d141c;
   cursor: grab;
-  border: none;
-  box-shadow: none;
 }
+
 
 .editor-container:active {
   cursor: grabbing;
@@ -343,10 +342,10 @@ html, body {
 /* Shape Grid */
 .shape-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
-.shape-item {
+/* .shape-item {
   cursor: pointer;
   text-align: center;
   padding: 6px;
@@ -362,7 +361,25 @@ html, body {
   width: 32px;
   height: 32px;
   filter: brightness(2) invert(1);
+} */
+
+.shape-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
+
+.shape-item svg {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.shape-item:hover svg {
+  transform: scale(1.1);
+}
+
 
 /* Layers */
 .layer-btn {
@@ -510,6 +527,11 @@ html, body {
   transition: background 0.2s ease;
 }
 .close-btn:hover { background: #66ffe0; }
+
+.layer-row {
+  transition: transform 120ms ease, background 120ms ease;
+}
+
 
 .layer-row.active {
   background: rgba(0, 255, 204, 0.08);

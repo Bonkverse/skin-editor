@@ -17,7 +17,7 @@ export default function SkinEditor() {
   // UI state
   const [showShapes, setShowShapes] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
-  const [showToolbar, setShowToolbar] = useState(true);
+  // const [showToolbar, setShowToolbar] = useState(true);
   const [history, setHistory] = useState([]);
   const [future, setFuture] = useState([]);
   const [isReordering, setIsReordering] = useState(false);
@@ -489,6 +489,12 @@ export default function SkinEditor() {
   // ---------- Shape Renderer ----------
   function Shape({ s, i }) {
   const [meta, setMeta] = useState(null);
+  
+  const tr = useMemo(() => {
+    const sx = s.flipX ? -s.scale : s.scale;
+    const sy = s.flipY ? -s.scale : s.scale;
+    return `translate(${s.x},${s.y}) rotate(${s.angle}) scale(${sx},${sy})`;
+  }, [s]);
 
   // Load SVG for the shape
   useEffect(() => {
@@ -502,12 +508,6 @@ export default function SkinEditor() {
 
   // --- Hide support ---
   if (s.hidden) return null;
-
-  const tr = useMemo(() => {
-    const sx = s.flipX ? -s.scale : s.scale;
-    const sy = s.flipY ? -s.scale : s.scale;
-    return `translate(${s.x},${s.y}) rotate(${s.angle}) scale(${sx},${sy})`;
-  }, [s]);
 
   const w = meta?.w ?? 50;
   const h = meta?.h ?? 50;
@@ -577,7 +577,7 @@ export default function SkinEditor() {
       if (e.target.tagName === "INPUT") return;
       if (selectedIndices.length === 0) return;
 
-      const moveStep = e.shiftKey ? 10 : 1;
+      // const moveStep = e.shiftKey ? 10 : 1;
       const newShapes = shapes.map((s, idx) => {
       if (!selectedIndices.includes(idx)) return s;
       const moveStep = e.shiftKey ? 10 : 1;
@@ -611,7 +611,7 @@ export default function SkinEditor() {
 
       // Ctrl-based commands
       if (e.ctrlKey || e.metaKey) {
-        const first = shapes[selectedIndices[0]];
+        // const first = shapes[selectedIndices[0]];
         switch (e.key.toLowerCase()) {
           case "s":
             e.preventDefault();
@@ -649,7 +649,9 @@ export default function SkinEditor() {
                     })),
                   ]);
                 }
-              } catch {}
+              } catch (err) {
+                console.error("Failed to parse pasted content:", err);
+              }
             });
             break;
         }

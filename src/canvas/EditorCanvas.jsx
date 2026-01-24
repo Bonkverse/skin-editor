@@ -1,19 +1,26 @@
 // src/canvas/EditorCanvas.jsx
+import { useRef } from "react";
 import { CANVAS_SIZE, BALL_RADIUS_PX } from "../bonk/constants";
 import Shape from "./Shape";
+import SelectionOverlay from "./SelectionOverlay";
+import { useCanvasCameraControls } from "../hooks/useCanvasCameraControls";
 
 export default function EditorCanvas({
-  shapes,   // useShapesEditor system
-  camera,   // useCamera system
-  overlay,  // useOverlay system
-  baseColor
+  shapes,
+  camera,
+  overlay,
+  baseColor,
 }) {
   const { overlay: o, startDrag, setImage } = overlay;
+  const svgRef = useRef(null);
+
+  useCanvasCameraControls(svgRef, camera);
 
   return (
     <svg
+      ref={svgRef}
       className="editor-canvas"
-      onMouseDown={shapes.clearSelection}
+      style={{ width: "100vw", height: "100vh" }}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault();
@@ -24,90 +31,108 @@ export default function EditorCanvas({
           reader.readAsDataURL(file);
         }
       }}
+      onMouseDown={() => shapes.clearSelection()}
     >
-      {/* Camera transform */}
+      {/* ============================= */}
+      {/* WORLD SPACE (CAMERA) */}
+      {/* ============================= */}
       <g
         transform={`
-          translate(
-            ${camera.camera.x + window.innerWidth / 2 - CANVAS_SIZE / 2},
-            ${camera.camera.y + window.innerHeight / 2 - CANVAS_SIZE / 2}
-          )
+          translate(${camera.camera.x}, ${camera.camera.y})
           scale(${camera.camera.zoom})
         `}
       >
-        {/* Clip mask for player circle */}
-        <defs>
-          <clipPath id="playerClip">
-            <circle
-              cx={CANVAS_SIZE / 2}
-              cy={CANVAS_SIZE / 2}
-              r={BALL_RADIUS_PX}
-            />
-          </clipPath>
-        </defs>
+        {/* Center world at screen center */}
+        <g transform={`translate(${window.innerWidth / 2}, ${window.innerHeight / 2})`}>
 
-        {/* Player outline */}
-        <circle
-          cx={CANVAS_SIZE / 2}
-          cy={CANVAS_SIZE / 2}
-          r={BALL_RADIUS_PX + 2}
-          fill="none"
-          stroke="rgba(0,0,0,0.25)"
-          strokeWidth={4}
-        />
+          {/* ✅ WORLD-SPACE HIT LAYER (for panning & deselect) */}
+          {/* <rect
+            x={-window.innerWidth}
+            y={-window.innerHeight}
+            width={window.innerWidth * 2}
+            height={window.innerHeight * 2}
+            fill="transparent"
+            pointerEvents="all"
+            onMouseDown={() => shapes.clearSelection()}
+          /> */}
 
-        {/* Player base color */}
-        <circle
-          cx={CANVAS_SIZE / 2}
-          cy={CANVAS_SIZE / 2}
-          r={BALL_RADIUS_PX}
-          fill={baseColor}
-          stroke="#333"
-          strokeWidth={3}
-        />
+          <defs>
+            <clipPath id="playerClip">
+              <circle cx={0} cy={0} r={BALL_RADIUS_PX} />
+            </clipPath>
+          </defs>
 
-        {/* Overlay image */}
-        {o.src && o.visible && (
-          <image
-            href={o.src}
-            x={o.x - CANVAS_SIZE / 2}
-            y={o.y - CANVAS_SIZE / 2}
-            width={CANVAS_SIZE * o.scale}
-            height={CANVAS_SIZE * o.scale}
-            opacity={o.opacity}
-            style={{ cursor: "move" }}
-            onMouseDown={startDrag}
+          {/* Player circle */}
+          <circle
+            cx={0}
+            cy={0}
+            r={BALL_RADIUS_PX + 2}
+            fill="none"
+            stroke="rgba(0,0,0,0.25)"
+            strokeWidth={4}
           />
-        )}
+          <circle
+            cx={0}
+            cy={0}
+            r={BALL_RADIUS_PX}
+            fill={baseColor}
+            stroke="#333"
+            strokeWidth={3}
+          />
 
-        {/* Non-selected shapes (clipped) */}
-        <g clipPath="url(#playerClip)">
-          {shapes.shapes.map((s, i) =>
-            shapes.isSelected(i) ? null : (
-              <Shape
-                key={i}
-                s={s}
-                i={i}
-                shapes={shapes}
-                camera={camera}
-              />
-            )
+          {/* Overlay image */}
+          {o.src && o.visible && (
+            <image
+              href={o.src}
+              x={o.x}
+              y={o.y}
+              width={CANVAS_SIZE * o.scale}
+              height={CANVAS_SIZE * o.scale}
+              opacity={o.opacity}
+              style={{ cursor: "move" }}
+              onMouseDown={startDrag}
+            />
+          )}
+
+          {/* Non-selected shapes */}
+          <g clipPath="url(#playerClip)">
+            {shapes.shapes.map((s, i) =>
+              shapes.isSelected(i) ? null : (
+                <Shape
+                  key={i}
+                  s={s}
+                  i={i}
+                  shapes={shapes}
+                  camera={camera}
+                />
+              )
+            )}
+          </g>
+
+          {/* Selected shapes (rendered on top) */}
+          {!shapes.isReordering &&
+            shapes.shapes.map((s, i) =>
+              shapes.isSelected(i) ? (
+                <Shape
+                  key={`${i}-selected`}
+                  s={s}
+                  i={i}
+                  shapes={shapes}
+                  camera={camera}
+                />
+              ) : null
+            )}
+
+          {/* Selection overlay */}
+          {shapes.selectedIndices.length === 1 && !shapes.isReordering && (
+            <SelectionOverlay
+              shape={shapes.shapes[shapes.selectedIndices[0]]}
+              index={shapes.selectedIndices[0]}
+              shapes={shapes}
+              camera={camera}
+            />
           )}
         </g>
-
-        {/* Selected shapes (unclipped, on top) */}
-        {!shapes.isReordering &&
-          shapes.shapes.map((s, i) =>
-            shapes.isSelected(i) ? (
-              <Shape
-                key={`${i}-selected`}
-                s={s}
-                i={i}
-                shapes={shapes}
-                camera={camera}
-              />
-            ) : null
-          )}
       </g>
     </svg>
   );

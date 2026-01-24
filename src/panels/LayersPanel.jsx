@@ -1,17 +1,31 @@
-export default function LayersPanel({
-  showLayers,
-  shapes,
-  isSelected,
-  setSelectedIndices,
-  updateShape,
-  commitShapes,
-  getShapeMarkup,
-}) {
-  return ( 
-    <div className={`panel layers-panel ${showLayers ? "open" : ""}`}>
+import { useState } from "react";
+
+export default function LayersPanel({ shapes, ui }) {
+  const [dragIndex, setDragIndex] = useState(null);
+  const [hoverIndex, setHoverIndex] = useState(null);
+
+  function reorder(list, from, to) {
+    const copy = [...list];
+    const [item] = copy.splice(from, 1);
+    copy.splice(to, 0, item);
+    return copy;
+  }
+
+  return (
+    <>
+      {/* Toggle button */}
+      <button
+        className="dock-btn right"
+        onClick={() => ui.setShowLayers((v) => !v)}
+      >
+        Layers
+      </button>
+
+      {/* Panel */}
+      <div className={`panel layers-panel ${ui.showLayers ? "open" : ""}`}>
         <h3>
-          Layers ({shapes.length}/16)
-          {shapes.length >= 16 && (
+          Layers ({shapes.shapes.length}/16)
+          {shapes.shapes.length >= 16 && (
             <div
               style={{
                 color: "#00ffcc",
@@ -27,52 +41,93 @@ export default function LayersPanel({
         </h3>
 
         <div className="layers-list">
-          {shapes
+          {shapes.shapes
             .slice()
             .reverse()
             .map((s, i) => {
-              const realIndex = shapes.length - 1 - i;
-              const selected = isSelected(realIndex);
+              const total = shapes.shapes.length;
+              const realIndex = total - 1 - i;
+
+              const selected = shapes.isSelected(realIndex);
+              const isDragging = dragIndex === i;
+              const isPlaceholder =
+                hoverIndex === i && dragIndex !== null && dragIndex !== i;
+
               return (
                 <div
-                  key={i}
+                  key={realIndex}
+                  draggable={!s.locked}
+                  onDragStart={() => {
+                    if (s.locked) return;
+                    setDragIndex(i);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    if (i !== dragIndex) setHoverIndex(i);
+                  }}
+                  onDragEnd={() => {
+                    if (
+                      dragIndex !== null &&
+                      hoverIndex !== null &&
+                      dragIndex !== hoverIndex
+                    ) {
+                      const reversed = [...shapes.shapes].reverse();
+                      const reordered = reorder(
+                        reversed,
+                        dragIndex,
+                        hoverIndex
+                      );
+                      shapes.commitShapes(reordered.reverse());
+                    }
+                    setDragIndex(null);
+                    setHoverIndex(null);
+                  }}
                   className={`layer-row ${selected ? "active" : ""}`}
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "6px",
                     marginBottom: "6px",
-                    background: selected
+                    borderRadius: "6px",
+                    padding: "6px",
+                    userSelect: "none",
+                    cursor: s.locked ? "not-allowed" : "grab",
+
+                    opacity: isDragging
+                      ? 0.4
+                      : s.hidden
+                      ? 0.4
+                      : 1,
+
+                    filter: s.locked ? "grayscale(60%)" : "none",
+
+                    background: isPlaceholder
+                      ? "rgba(0,255,200,0.15)"
+                      : selected
                       ? "rgba(0,255,200,0.15)"
                       : "rgba(255,255,255,0.05)",
-                    borderRadius: "6px",
-                    padding: "4px",
-                    userSelect: "none",
-                    cursor: "grab",
-                  }}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.effectAllowed = "move";
-                    e.dataTransfer.setData("text/plain", i.toString());
-                  }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const from = parseInt(e.dataTransfer.getData("text/plain"));
-                    const to = i;
 
-                    const reversed = [...shapes].reverse();
-                    const [moved] = reversed.splice(from, 1);
-                    reversed.splice(to, 0, moved);
+                    outline: isPlaceholder
+                      ? "2px dashed rgba(0,255,200,0.6)"
+                      : "none",
 
-                    const newShapes = reversed.reverse();
-                    commitShapes(newShapes);
-                    }}
+                    transition:
+                      "background 120ms ease, opacity 120ms ease",
+                  }}
                 >
                   {/* Thumbnail */}
                   <div
                     className="layer-thumb"
-                    dangerouslySetInnerHTML={{ __html: getShapeMarkup(s.id, s.color) }}
+                    dangerouslySetInnerHTML={{
+                      __html: shapes.getShapeMarkup(
+                        s.id,
+                        s.color,
+                        26,
+                        s.angle,
+                        s.flipX,
+                        s.flipY
+                      ),
+                    }}
                     style={{
                       width: 26,
                       height: 26,
@@ -81,20 +136,16 @@ export default function LayersPanel({
                       justifyContent: "center",
                       overflow: "hidden",
                       borderRadius: "4px",
-                      transform: `
-                        scale(${s.flipX ? -0.8 : 0.8}, ${s.flipY ? -0.8 : 0.8})
-                        rotate(${s.angle}deg)
-                      `,
-                      filter: s.hidden ? "grayscale(100%) brightness(0.4)" : "none",
                       pointerEvents: "none",
                     }}
                   />
 
-
-
-                  {/* Name */}
+                  {/* Name / Select */}
                   <button
-                    onClick={() => setSelectedIndices([realIndex])}
+                    onClick={() =>
+                      !s.locked &&
+                      shapes.setSelectedIndices([realIndex])
+                    }
                     className={`layer-btn ${selected ? "active" : ""}`}
                     style={{
                       flex: 1,
@@ -102,26 +153,35 @@ export default function LayersPanel({
                       background: "none",
                       border: "none",
                       color: "inherit",
-                      cursor: "pointer",
+                      cursor: s.locked ? "not-allowed" : "pointer",
                     }}
                   >
                     Shape {s.id}
                   </button>
 
-                  {/* Lock toggle */}
+                  {/* Lock */}
                   <button
                     className="tiny-btn"
                     title={s.locked ? "Unlock shape" : "Lock shape"}
-                    onClick={() => updateShape(realIndex, { locked: !s.locked })}
+                    onClick={() =>
+                      shapes.updateShape(realIndex, {
+                        locked: !s.locked,
+                      })
+                    }
                   >
                     {s.locked ? "🔒" : "🔓"}
                   </button>
 
-                  {/* Hide toggle */}
+                  {/* Hide */}
                   <button
                     className="tiny-btn"
                     title={s.hidden ? "Show shape" : "Hide shape"}
-                    onClick={() => updateShape(realIndex, { hidden: !s.hidden })}
+                    onClick={() => {
+                      shapes.updateShape(realIndex, {
+                        hidden: !s.hidden,
+                      });
+                      shapes.clearSelection();
+                    }}
                   >
                     {s.hidden ? "🙈" : "👁️"}
                   </button>
@@ -130,5 +190,6 @@ export default function LayersPanel({
             })}
         </div>
       </div>
-   );
+    </>
+  );
 }

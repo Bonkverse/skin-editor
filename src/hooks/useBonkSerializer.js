@@ -24,9 +24,9 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
         .map((s) => ({
           id: s.id,
           scale: +(s.scale / BONK_SCALE_FACTOR).toFixed(6),
-          angle: +s.angle.toFixed(6),
-          x: +((s.x - CANVAS_SIZE / 2) / BONK_X_POS_FACTOR).toFixed(6),
-          y: +((s.y - CANVAS_SIZE / 2) / BONK_Y_POS_FACTOR).toFixed(6),
+          angle: +((s.angle * 180) / Math.PI).toFixed(6),
+          x: +((s.x) / BONK_X_POS_FACTOR).toFixed(6),
+          y: +((s.y) / BONK_Y_POS_FACTOR).toFixed(6),
           flipX: !!s.flipX,
           flipY: !!s.flipY,
           color: parseInt(s.color.replace("#", ""), 16),
@@ -66,9 +66,10 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
         .map((l) => ({
           id: l.id,
           scale: parseFloat(l.scale) * BONK_SCALE_FACTOR,
-          angle: parseFloat(l.angle),
-          x: parseFloat(l.x) * BONK_X_POS_FACTOR + CANVAS_SIZE / 2,
-          y: parseFloat(l.y) * BONK_Y_POS_FACTOR + CANVAS_SIZE / 2,
+          // angle: parseFloat(l.angle),
+          angle: (parseFloat(l.angle) * Math.PI) / 180,
+          x: parseFloat(l.x) * BONK_X_POS_FACTOR,
+          y: parseFloat(l.y) * BONK_Y_POS_FACTOR,
           flipX: !!l.flipX,
           flipY: !!l.flipY,
           color: `#${l.color.toString(16).padStart(6, "0")}`,
@@ -81,8 +82,34 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
     reader.readAsText(file);
   }
 
+  function exportSkinObject() {
+    return {
+      bc: parseInt(baseColor.replace("#", ""), 16),
+      layers: [...shapes.shapes]
+        .reverse()
+        .map((s) => ({
+          id: s.id,
+          scale: +(s.scale / BONK_SCALE_FACTOR).toFixed(6),
+
+          // ✅ radians → degrees (Bonk expects degrees)
+          angle: +((s.angle * 180) / Math.PI).toFixed(6),
+
+          x: +((s.x) / BONK_X_POS_FACTOR).toFixed(6),
+          y: +((s.y) / BONK_Y_POS_FACTOR).toFixed(6),
+
+          flipX: !!s.flipX,
+          flipY: !!s.flipY,
+          color: parseInt(s.color.replace("#", ""), 16),
+        })),
+    };
+  }
+
+
   return {
+    baseColor,
+    setBaseColor,
     exportJSON,
     importJSON,
+    exportSkinObject,
   };
 }

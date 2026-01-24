@@ -1,102 +1,116 @@
-import React from "react";
+import {useState, useEffect} from "react";
 import ColorPicker from "./ColorPicker";
 
-export default function ShapeProperties({ shape, index, shapes, updateShape, moveShapeUp, moveShapeDown, setShapes, setSelectedIndices }) {
-  const [localScale, setLocalScale] = React.useState(shape.scale);
-  const [localAngle, setLocalAngle] = React.useState(shape.angle);
-  const [localX, setLocalX] = React.useState(shape.x);
-  const [localY, setLocalY] = React.useState(shape.y);
+export default function ShapeProperties({
+  shape,
+  index,
+  shapes,
+  updateShape,
+  moveShapeUp,
+  moveShapeDown,
+  setSelectedIndices,
+}) {
+  const [localScale, setLocalScale] = useState(shape.scale);
+  const [localAngle, setLocalAngle] = useState(shape.angle);
+  const [localX, setLocalX] = useState(shape.x);
+  const [localY, setLocalY] = useState(shape.y);
 
-  React.useEffect(() => {
+  const locked = shape.locked;
+
+  useEffect(() => {
     setLocalScale(shape.scale);
+  }, [shape.scale]);
+
+  useEffect(() => {
     setLocalAngle(shape.angle);
+  }, [shape.angle]);
+
+  useEffect(() => {
     setLocalX(shape.x);
     setLocalY(shape.y);
-  }, [index, shape]);
+  }, [shape.x, shape.y]);
+
 
   return (
     <div className="shape-props-form">
-      <div className="shape-color-section">
-        <ColorPicker
-          color={shape.color}
-          onChange={(newColor) => updateShape(index, { color: newColor })}
-        />
-      </div>
-
-
+      {/* Color */}
+      <ColorPicker
+        color={shape.color}
+        disabled={locked}
+        onChange={(newColor) =>
+          !locked && updateShape(index, { color: newColor })
+        }
+      />
 
       <div className="shape-props-grid">
         <label>
           Scale:
           <input
-            type="text"
             className="neon-input"
             value={localScale}
-            onChange={(e) => setLocalScale(e.target.value)}
-            onBlur={() => {
-              const val = parseFloat(localScale);
+            disabled={locked}
+            onChange={(e) => {
+              setLocalScale(e.target.value);
+              const val = parseFloat(e.target.value);
               if (!isNaN(val)) updateShape(index, { scale: val });
             }}
-            onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
           />
         </label>
 
         <label>
           Angle:
           <input
-            type="text"
             className="neon-input"
             value={localAngle}
-            onChange={(e) => setLocalAngle(e.target.value)}
-            onBlur={() => {
-              const val = parseFloat(localAngle);
+            disabled={locked}
+            onChange={(e) => {
+              setLocalAngle(e.target.value);
+              const val = parseFloat(e.target.value);
               if (!isNaN(val)) updateShape(index, { angle: val });
             }}
-            onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
           />
         </label>
 
         <label>
           X Pos:
           <input
-            type="text"
             className="neon-input"
             value={localX}
-            onChange={(e) => setLocalX(e.target.value)}
-            onBlur={() => {
-              const val = parseFloat(localX);
+            disabled={locked}
+            onChange={(e) => {
+              setLocalX(e.target.value);
+              const val = parseFloat(e.target.value);
               if (!isNaN(val)) updateShape(index, { x: val });
             }}
-            onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
           />
         </label>
 
         <label>
           Y Pos:
           <input
-            type="text"
             className="neon-input"
             value={localY}
-            onChange={(e) => setLocalY(e.target.value)}
-            onBlur={() => {
-              const val = parseFloat(localY);
+            disabled={locked}
+            onChange={(e) => {
+              setLocalY(e.target.value);
+              const val = parseFloat(e.target.value);
               if (!isNaN(val)) updateShape(index, { y: val });
             }}
-            onKeyDown={(e) => e.key === "Enter" && e.target.blur()}
           />
         </label>
       </div>
 
-
       <div className="flip-row">
         <button
           className={`flip-btn ${shape.flipX ? "active" : ""}`}
+          disabled={locked}
           onClick={() => updateShape(index, { flipX: !shape.flipX })}
         >
           Flip X
         </button>
         <button
           className={`flip-btn ${shape.flipY ? "active" : ""}`}
+          disabled={locked}
           onClick={() => updateShape(index, { flipY: !shape.flipY })}
         >
           Flip Y
@@ -105,26 +119,26 @@ export default function ShapeProperties({ shape, index, shapes, updateShape, mov
 
       <div className="move-row">
         <button
-          className={`move-btn ${index === shapes.length - 1 ? "disabled" : ""}`}
+          className="move-btn"
+          disabled={locked || index === shapes.length - 1}
           onClick={() => moveShapeUp(index)}
-          disabled={index === shapes.length - 1}
         >
           Move Up
         </button>
         <button
-          className={`move-btn ${index === 0 ? "disabled" : ""}`}
+          className="move-btn"
+          disabled={locked || index === 0}
           onClick={() => moveShapeDown(index)}
-          disabled={index === 0}
         >
           Move Down
         </button>
       </div>
 
-
       <button
         className="delete-btn"
+        disabled={locked}
         onClick={() => {
-          setShapes((prev) => prev.filter((_, idx) => idx !== index));
+          updateShape(index, { _delete: true }); // see note below
           setSelectedIndices([]);
         }}
       >

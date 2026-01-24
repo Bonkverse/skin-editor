@@ -4,6 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch"; // install with: npm install node-fetch
 import { encodeSkin } from "./encodeSkin.js"; // import your encoder
+import process from "process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

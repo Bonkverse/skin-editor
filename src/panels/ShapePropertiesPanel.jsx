@@ -1,30 +1,29 @@
-import ShapeProperties from "./components/ShapeProperties";
+import ShapeProperties from "../components/ShapeProperties";
 
-export default function ShapePropertiesPanel({
-  selectedIndices,
-  shapes,
-  updateShape,
-  moveShapeUp,
-  moveShapeDown,
-  setShapes,
-  setSelectedIndices,
-}) {
+export default function ShapePropertiesPanel({ shapes }) {
+  const { selectedIndices, shapes: shapeList } = shapes;
+
+  // Only show when exactly one shape is selected
   if (selectedIndices.length !== 1) return null;
-  return ( 
-    selectedIndices.length === 1 && (
-            <div className="shape-props-panel open">
-              <h3>Shape Properties</h3>
-              <ShapeProperties
-                shape={shapes[selectedIndices[0]]}
-                index={selectedIndices[0]}
-                shapes={shapes}
-                updateShape={updateShape}
-                moveShapeUp={moveShapeUp}
-                moveShapeDown={moveShapeDown}
-                setShapes={setShapes}
-                setSelectedIndices={setSelectedIndices}
-              />
-            </div>
-          )
-   );
+
+  const index = selectedIndices[0];
+  const shape = shapeList[index];
+
+  if (!shape) return null;
+
+  return (
+    <div className="shape-props-panel open">
+      <h3>Shape Properties</h3>
+      <ShapeProperties
+        shape={shape}
+        index={index}
+        shapes={shapeList}
+        updateShape={shapes.updateShape}
+        moveShapeUp={shapes.moveShapeUp}
+        moveShapeDown={shapes.moveShapeDown}
+        setShapes={shapes.setShapes}
+        setSelectedIndices={shapes.setSelectedIndices}
+      />
+    </div>
+  );
 }

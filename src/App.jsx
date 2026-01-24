@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { loadAndNormalizeSvg } from "./utils/loadSvg";
+import { TOTAL_BONK_SHAPES } from "./bonk/constants";
+
 
 // Layout components
 import EditorShell from "./layout/EditorShell";
@@ -14,6 +17,7 @@ import { useOverlay } from "./hooks/useOverlay";
 import { useEditorUI } from "./hooks/useEditorUI";
 import { useBonkSerializer } from "./hooks/useBonkSerializer";
 import { useShapesEditor } from "./hooks/useShapesEditor";
+import ShapePropertiesPanel from "./panels/ShapePropertiesPanel";
 
 
 export default function SkinEditor() {
@@ -30,6 +34,15 @@ export default function SkinEditor() {
     setBaseColor
   );
 
+  useEffect(() => {
+    (async () => {
+      for (let i = 1; i <= TOTAL_BONK_SHAPES; i++) {
+        await loadAndNormalizeSvg(i);
+      }
+      console.log("✅ SVG cache loaded");
+    })();
+  }, []);
+
   // 4. RENDER
   return (
     <EditorShell showShapes={ui.showShapes} showLayers={ui.showLayers}>
@@ -40,8 +53,9 @@ export default function SkinEditor() {
         baseColor={baseColor}
       />
       <ToolsBar ui={ui} shapes={shapes} bonk={bonk} camera={camera} />
-      <ShapesPanel shapes={shapes} />
-      <LayersPanel shapes={shapes} />
+      <ShapesPanel shapes={shapes} ui={ui}/>
+      <LayersPanel shapes={shapes} ui={ui} />
+      <ShapePropertiesPanel shapes={shapes}/>
       <WelcomeModal ui={ui} />
     </EditorShell>
   );
