@@ -3,8 +3,21 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import fetch from "node-fetch"; // install with: npm install node-fetch
-import { encodeSkin } from "./encodeSkin.js"; // import your encoder
+import { encodeSkin } from "./src/utils/encodeSkin.js"; // import your encoder
 import process from "process";
+
+import { Buffer } from "buffer";
+import sharp from "sharp";
+import { decodeSkinCode } from "./decodeSkin.js"; // your decoder
+import { renderSkinToSVGFromBonk } from "./src/render/renderSkinToSVGFromBonk.js";
+import { loadAndNormalizeSvgNode } from "./src/utils/loadSvgNode.js";
+import { TOTAL_BONK_SHAPES } from "./src/bonk/constants.js";
+
+for (let i = 1; i <= TOTAL_BONK_SHAPES; i++) {
+  loadAndNormalizeSvgNode(i);
+}
+
+console.log("✅ Server SVG cache loaded");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,6 +87,35 @@ app.post("/api/wear", async (req, res) => {
     res.status(500).json({ ok: false, error: "server_error" });
   }
 });
+
+app.post("/api/render", async (req, res) => {
+  try {
+    const { skinCode, size = 512 } = req.body;
+    if (!skinCode) {
+      return res.status(400).json({ error: "missing_skin_code" });
+    }
+
+    // 1️⃣ Decode skin code → Bonk JSON
+    const skin = decodeSkinCode(skinCode);
+
+    // 2️⃣ Render SVG (Bonk-space aware)
+    const svg = renderSkinToSVGFromBonk(skin);
+
+    // 3️⃣ SVG → PNG
+    const png = await sharp(Buffer.from(svg))
+      .resize(size, size)
+      .png()
+      .toBuffer();
+
+    // 4️⃣ Return image
+    res.set("Content-Type", "image/png");
+    res.send(png);
+  } catch (err) {
+    console.error("Error in /api/render:", err);
+    res.status(500).json({ error: "render_failed" });
+  }
+});
+
 
 // Example API route
 app.get("/api/health", (req, res) => {

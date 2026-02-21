@@ -34,13 +34,24 @@ export default function ShapeProperties({
   return (
     <div className="shape-props-form">
       {/* Color */}
-      <ColorPicker
+      {/* <ColorPicker
         color={shape.color}
         disabled={locked}
         onChange={(newColor) =>
           !locked && updateShape(index, { color: newColor })
         }
+      /> */}
+      <ColorPicker
+        color={shape.color}
+        disabled={locked}
+        onPreview={(val) =>
+          !locked && updateShape(index, { color: val }, { commit: false })
+        }
+        onCommit={(val) =>
+          !locked && updateShape(index, { color: val }, { commit: true })
+        }
       />
+
 
       <div className="shape-props-grid">
         <label>

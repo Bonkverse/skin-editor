@@ -29,9 +29,10 @@ export default function Shape({ s, i, shapes, camera }) {
         onMouseDown={(e) => {
           e.stopPropagation();
           if (s.locked) return;
-          shapes.setSelectedIndices([i]);
+          if (!shapes.isSelected(i)) shapes.setSelectedIndices([i]);
           startShapeDrag(e, s, i, shapes, camera);
         }}
+
       />
 
       {/* 🎨 Visual SVG (non-interactive) */}

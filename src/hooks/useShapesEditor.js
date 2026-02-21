@@ -1,6 +1,5 @@
 // src/hooks/useShapesEditor.js
 import { useState } from "react";
-import { CANVAS_SIZE } from "../bonk/constants";
 import { svgCache } from "../utils/svgCache.js";
 
 export function useShapesEditor() {
@@ -12,14 +11,45 @@ export function useShapesEditor() {
   const [isReordering, setIsReordering] = useState(false);
   // const [isDragging, setIsDragging] = useState(false);
 
-
   // ===== HELPERS =====
   const clearSelection = () => setSelectedIndices([]);
 
-  function commitShapes(newShapes) {
-    setHistory((h) => [...h.slice(-50), shapes]);
-    setFuture([]);
-    setShapes(newShapes);
+  function commitShapes(nextShapes) {
+    setShapes((prev) => {
+      // push prev into history
+      setHistory((h) => [...h.slice(-50), prev]);
+      setFuture([]);
+      return nextShapes;
+    });
+  }
+
+  function updateShape(index, patch, opts = {}) {
+    const { commit = true } = opts;
+
+    setShapes(prev => {
+      const curr = prev[index];
+      if (!curr) return prev;
+
+      let changed = false;
+      for (const k in patch) {
+        if (curr[k] !== patch[k]) {
+          changed = true;
+          break;
+        }
+      }
+      if (!changed) return prev;
+
+      const next = prev.map((s, i) =>
+        i === index ? { ...s, ...patch } : s
+      );
+
+      if (commit) {
+        setHistory(h => [...h.slice(-50), prev]);
+        setFuture([]);
+      }
+
+      return next;
+    });
   }
 
   // ===== ACTIONS =====
@@ -47,19 +77,12 @@ export function useShapesEditor() {
     }
   }
 
-  function updateShape(index, patch) {
-    if (!shapes[index]) return;
-      commitShapes(
-        shapes.map((s, i) => (i === index ? { ...s, ...patch } : s))
-      );
-    }
 
   function isSelected(index) {
     const s = shapes[index];
     if (!s || s.hidden) return false;
     return selectedIndices.includes(index);
   }
-
 
 
   function undo() {
@@ -106,17 +129,6 @@ export function useShapesEditor() {
     setTimeout(() => setIsReordering(false), 150);
   }
 
-  // function getShapeMarkup(id, color = "#000") {
-  //     const meta = svgCache.get(id);
-  //     if (!meta) return "";
-  //     const { html, w, h } = meta;
-  //     return `
-  //       <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-w / 2} ${-h / 2} ${w} ${h}" width="24" height="24" style="color: ${color};">
-  //         ${html}
-  //       </svg>
-  //     `;
-  // }
-
   function getShapeMarkup(id, color = "#000", size = 24) {
     const meta = svgCache.get(id);
     if (!meta) return "";
@@ -142,9 +154,6 @@ export function useShapesEditor() {
       </svg>
     `;
   }
-
-
-
 
   // ===== PUBLIC API =====
   return {
