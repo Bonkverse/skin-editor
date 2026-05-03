@@ -116,6 +116,82 @@ app.post("/api/render", async (req, res) => {
   }
 });
 
+app.post("/api/render-bundle", async (req, res) => {
+  try {
+    const { skinCode, size = 512 } = req.body;
+
+    if (!skinCode || typeof skinCode !== "string") {
+      return res.status(400).json({
+        ok: false,
+        error: "missing_or_invalid_skin_code",
+      });
+    }
+
+    // 1️⃣ Decode
+    let skin;
+    try {
+      skin = decodeSkinCode(skinCode);
+    } catch (err) {
+      return res.status(400).json({
+        ok: false,
+        error: "invalid_skin_code",
+        hint: err.message,
+      });
+    }
+
+    // 2️⃣ Render SVG
+    let svg;
+    try {
+      svg = renderSkinToSVGFromBonk(skin);
+    } catch (err) {
+      return res.status(500).json({
+        ok: false,
+        error: "svg_render_failed",
+        hint: err.message,
+      });
+    }
+
+    // 3️⃣ Convert → PNG + thumbnail
+    let pngBuffer, thumbBuffer;
+    try {
+      const svgBuffer = Buffer.from(svg);
+
+      pngBuffer = await sharp(svgBuffer)
+        .resize(size, size)
+        .png()
+        .toBuffer();
+
+      thumbBuffer = await sharp(svgBuffer)
+        .resize(128, 128)
+        .png()
+        .toBuffer();
+    } catch (err) {
+      return res.status(500).json({
+        ok: false,
+        error: "png_conversion_failed",
+        hint: err.message,
+      });
+    }
+
+    // 4️⃣ Return bundle
+    return res.json({
+      ok: true,
+      svg,
+      pngBase64: pngBuffer.toString("base64"),
+      thumbnailBase64: thumbBuffer.toString("base64"),
+    });
+
+  } catch (err) {
+    console.error("🔥 Unexpected error in /api/render-bundle:", err);
+
+    return res.status(500).json({
+      ok: false,
+      error: "render_bundle_failed",
+      hint: err.message,
+    });
+  }
+});
+
 
 // Example API route
 app.get("/api/health", (req, res) => {
