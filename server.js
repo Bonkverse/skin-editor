@@ -276,7 +276,24 @@ app.post("/api/render", async (req, res) => {
   }
 });
 
-app.post("/api/render-bundle", async (req, res) => {
+const INTERNAL_RENDER_SECRET = process.env.INTERNAL_RENDER_SECRET;
+
+function requireInternalRenderSecret(req, res, next) {
+  if (!INTERNAL_RENDER_SECRET) return next();
+
+  const provided = req.headers["x-internal-render-secret"];
+
+  if (provided !== INTERNAL_RENDER_SECRET) {
+    return res.status(401).json({
+      ok: false,
+      error: "unauthorized_render_request",
+    });
+  }
+
+  next();
+}
+
+app.post("/api/render-bundle", requireInternalRenderSecret, async (req, res) => {
   try {
     const { skinCode } = req.body;
 
