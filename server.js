@@ -61,9 +61,7 @@ app.post("/api/wear", async (req, res) => {
       3; // fallback if missing
 
     // 2️⃣ Encode JSON into skinCode if not raw
-    let skinCode
-    if (raw) skinCode = skin
-    else skinCode = encodeSkin(skin);
+    const skinCode = raw ? skin : encodeSkin(skin);
 
     // 3️⃣ Apply skin to user’s active slot
     const updateRes = await fetch(BONK_AVATAR_UPDATE_URL, {
