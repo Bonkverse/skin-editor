@@ -33,7 +33,7 @@ app.use(express.json({ limit: "1mb" }));
 
 app.post("/api/wear", async (req, res) => {
   try {
-    const { username, password, skin } = req.body;
+    const { username, password, skin, raw } = req.body;
     if (!username || !password || !skin) {
       return res.status(400).json({ ok: false, error: "missing_params" });
     }
@@ -60,8 +60,8 @@ app.post("/api/wear", async (req, res) => {
       loginData.activeavatarnumber ||
       3; // fallback if missing
 
-    // 2️⃣ Encode JSON into skinCode
-    const skinCode = encodeSkin(skin);
+    // 2️⃣ Encode JSON into skinCode if not raw
+    const skinCode = raw ? skin : encodeSkin(skin);
 
     // 3️⃣ Apply skin to user’s active slot
     const updateRes = await fetch(BONK_AVATAR_UPDATE_URL, {
