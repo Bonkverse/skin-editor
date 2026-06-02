@@ -219,7 +219,7 @@ import process from "process";
 
 import { Buffer } from "buffer";
 import sharp from "sharp";
-import { decodeSkinCode } from ".src/bonk/decode/decodeSkinNode.js"; // node decoder (handles single + double-encoded codes)
+import { decodeSkinCode } from "./src/bonk/decode/decodeSkinNode.js"; // node decoder (handles single + double-encoded codes)
 import { renderSkinToSVGFromBonk } from "./src/render/renderSkinToSVGFromBonk.js";
 import { loadAndNormalizeSvgNode } from "./src/utils/loadSvgNode.js";
 import { TOTAL_BONK_SHAPES } from "./src/bonk/constants.js";
