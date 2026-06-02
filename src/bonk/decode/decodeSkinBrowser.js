@@ -1,7 +1,9 @@
 import { decodeSkinBytes } from "./decodeSkinCore";
 
 export function decodeSkinCode(code) {
-  const decoded = decodeURIComponent(code);
+  // Decode once, then again if still URL-encoded (handles double-encoded DB codes)
+  let decoded = decodeURIComponent(code);
+  if (decoded.includes("%")) decoded = decodeURIComponent(decoded);
   const binary = atob(decoded);
 
   const bytes = new Uint8Array(binary.length);
