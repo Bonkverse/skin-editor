@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { loadAndNormalizeSvg } from "../utils/loadSvg";
+// import { loadAndNormalizeSvg } from "../utils/loadSvg";
+import { loadAllSvgs } from "../utils/loadAllSvgs.js";
 import { TOTAL_BONK_SHAPES } from "../bonk/constants";
 import { BONK_SCALE_FACTOR, BONK_X_POS_FACTOR, BONK_Y_POS_FACTOR } from "../bonk/constants.js";
 import { decodeSkinCode } from "../bonk/decode/decodeSkinBrowser";
@@ -35,14 +36,21 @@ export default function SkinEditorInner() {
   /* --------------------------------------------
    * 1️⃣ Load SVGs FIRST
    * ------------------------------------------ */
+  // useEffect(() => {
+  //   (async () => {
+  //     for (let i = 1; i <= TOTAL_BONK_SHAPES; i++) {
+  //       await loadAndNormalizeSvg(i);
+  //     }
+  //     console.log("✅ SVG cache loaded");
+  //     setSvgsReady(true);
+  //   })();
+  // }, []);
+  
   useEffect(() => {
-    (async () => {
-      for (let i = 1; i <= TOTAL_BONK_SHAPES; i++) {
-        await loadAndNormalizeSvg(i);
-      }
+    loadAllSvgs().then(() => {
       console.log("✅ SVG cache loaded");
       setSvgsReady(true);
-    })();
+    });
   }, []);
 
   /* --------------------------------------------
