@@ -240,7 +240,7 @@ const app = express();
 // Serve static files from dist
 app.use(express.static(path.join(__dirname, "dist")));
 
-app.use(express.json({ limit: "1mb" }, type: ['application/json', 'text/*']));
+app.use(express.json({ limit: "1mb", type: ['application/json', 'text/*'] }));
 
 app.post("/api/wear", async (req, res) => {
   try {
