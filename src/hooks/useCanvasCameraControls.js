@@ -96,7 +96,7 @@ export function useCanvasCameraControls(canvasRef, camera) {
       const mouseY = e.clientY - rect.top - rect.height / 2;
       const zoomFactor = 1 - e.deltaY * 0.001;
       setCameraRef.current((prev) => {
-        const newZoom = Math.min(Math.max(prev.zoom * zoomFactor, 0.2), 5);
+        const newZoom = Math.max(prev.zoom * zoomFactor, 0.001); // no upper limit
         const ratio = newZoom / prev.zoom;
         return {
           zoom: newZoom,

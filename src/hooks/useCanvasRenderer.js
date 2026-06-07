@@ -73,47 +73,6 @@ export function useCanvasRenderer(canvasRef, shapes, camera, baseColor, overlay)
       ctx.fillStyle = bc; ctx.fill();
       ctx.strokeStyle = "#333"; ctx.lineWidth = 3 / cam.zoom; ctx.stroke();
 
-      // ── Overlay image ─────────────────────────────────────────
-      // Clipped to the ball circle when not in overlay mode.
-      // Unclipped when in overlay mode so the user can drag freely.
-      if (ov.src && ov.visible && ov._img) {
-        const imgW = ov._img.naturalWidth || ov._img.width || 512;
-        const imgH = ov._img.naturalHeight || ov._img.height || 512;
-        const fitScale = (BALL_RADIUS_PX * 2) / Math.max(imgW, imgH);
-        const drawW = imgW * fitScale * ov.scale;
-        const drawH = imgH * fitScale * ov.scale;
-        const overlayMode = canvas._overlayMode ?? false;
-
-        ctx.save();
-
-        // Clip to ball circle when not actively editing the overlay
-        if (!overlayMode) {
-          ctx.beginPath();
-          ctx.arc(0, 0, BALL_RADIUS_PX, 0, Math.PI * 2);
-          ctx.clip();
-        }
-
-        ctx.translate(ov.x, ov.y); ctx.rotate(ov.angle);
-        ctx.globalAlpha = ov.opacity;
-        ctx.drawImage(ov._img, -drawW / 2, -drawH / 2, drawW, drawH);
-        ctx.globalAlpha = 1;
-
-        // Box + handle — only shown in overlay mode
-        if (overlayMode) {
-          const hw = drawW / 2, hh = drawH / 2;
-          const sw = 1.5 / cam.zoom, hr = OV_HANDLE_RADIUS / cam.zoom;
-          ctx.strokeStyle = OV_BOX_COLOR; ctx.lineWidth = sw;
-          ctx.setLineDash([6 / cam.zoom, 4 / cam.zoom]);
-          ctx.strokeRect(-hw, -hh, drawW, drawH);
-          ctx.setLineDash([]);
-          ctx.beginPath(); ctx.arc(hw, -hh, hr, 0, Math.PI * 2);
-          ctx.fillStyle = OV_HANDLE_FILL; ctx.fill();
-          ctx.strokeStyle = OV_HANDLE_STROKE; ctx.lineWidth = sw; ctx.stroke();
-        }
-
-        ctx.restore();
-      }
-
       // ── Non-selected shapes — clipped ─────────────────────────
       ctx.save();
       ctx.beginPath(); ctx.arc(0, 0, BALL_RADIUS_PX, 0, Math.PI * 2); ctx.clip();
@@ -162,6 +121,48 @@ export function useCanvasRenderer(canvasRef, shapes, camera, baseColor, overlay)
         if (s && !s.locked) drawSelectionOverlay(ctx, s, svgCache, cam.zoom);
       } else if (selected.size > 1) {
         drawMultiSelectionOverlay(ctx, allShapes, selectedArr, svgCache, cam.zoom);
+      }
+
+      // ── Overlay image — drawn ON TOP of shapes ───────────────
+      // Always above shapes so it works as a tracing guide.
+      // Clipped to ball when not in overlay mode (edit mode shows full image).
+      if (ov.src && ov.visible && ov._img) {
+        const imgW = ov._img.naturalWidth || ov._img.width || 512;
+        const imgH = ov._img.naturalHeight || ov._img.height || 512;
+        const fitScale = (BALL_RADIUS_PX * 2) / Math.max(imgW, imgH);
+        const drawW = imgW * fitScale * ov.scale;
+        const drawH = imgH * fitScale * ov.scale;
+        const overlayMode = canvas._overlayMode ?? false;
+
+        ctx.save();
+
+        // Clip to ball when not actively editing
+        if (!overlayMode) {
+          ctx.beginPath();
+          ctx.arc(0, 0, BALL_RADIUS_PX, 0, Math.PI * 2);
+          ctx.clip();
+        }
+
+        ctx.translate(ov.x, ov.y);
+        ctx.rotate(ov.angle);
+        ctx.globalAlpha = ov.opacity;
+        ctx.drawImage(ov._img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.globalAlpha = 1;
+
+        // Box + handle only in overlay edit mode
+        if (overlayMode) {
+          const hw = drawW / 2, hh = drawH / 2;
+          const sw = 1.5 / cam.zoom, hr = OV_HANDLE_RADIUS / cam.zoom;
+          ctx.strokeStyle = OV_BOX_COLOR; ctx.lineWidth = sw;
+          ctx.setLineDash([6 / cam.zoom, 4 / cam.zoom]);
+          ctx.strokeRect(-hw, -hh, drawW, drawH);
+          ctx.setLineDash([]);
+          ctx.beginPath(); ctx.arc(hw, -hh, hr, 0, Math.PI * 2);
+          ctx.fillStyle = OV_HANDLE_FILL; ctx.fill();
+          ctx.strokeStyle = OV_HANDLE_STROKE; ctx.lineWidth = sw; ctx.stroke();
+        }
+
+        ctx.restore();
       }
 
       // ── Rubber-band rect ──────────────────────────────────────

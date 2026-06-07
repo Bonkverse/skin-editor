@@ -551,3 +551,35 @@ kbd {
   transition: color 0.13s;
 }
 .multi-deselect:hover { color: #fff; }
+
+/* ============================================================
+   COLOR PICKER — RECENT COLORS ROW
+   ============================================================ */
+.cp-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(0,255,204,0.1);
+}
+
+.cp-recent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cp-recent-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.12);
+  transition: transform 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.cp-recent-swatch:hover {
+  transform: scale(1.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 6px rgba(0,255,204,0.4);
+}
