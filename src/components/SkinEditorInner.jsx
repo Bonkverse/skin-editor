@@ -128,15 +128,21 @@ export default function SkinEditorInner() {
   }, [shapes.selectedIndices, overlay.overlay.src]);
 
   // ── Overlay activate: enter mode + switch to overlay tab ──────
-  // Called when user clicks the Overlay button in TopBar or presses O
+  // Called when user clicks the Overlay button in TopBar or presses O,
+  // and also after drag-drop or file upload loads an image.
   function activateOverlay() {
     if (!overlay.overlay.src) return;
-    // Enter overlay mode
     if (!overlay.overlayMode) overlay.toggleOverlayMode();
-    // Open panel and switch to overlay tab
     setShowPanel(true);
     panelSetTab.current?.("overlay");
   }
+
+  // Keep canvas._overlayMode in sync so the renderer can read it
+  // synchronously each RAF frame without going through React state.
+  useEffect(() => {
+    const canvas = document.querySelector(".editor-canvas");
+    if (canvas) canvas._overlayMode = overlay.overlayMode;
+  }, [overlay.overlayMode]);
 
   return (
     <div className="editor-root">
@@ -158,6 +164,7 @@ export default function SkinEditorInner() {
           <EditorCanvas
             shapes={shapes} camera={camera}
             overlay={overlay} baseColor={baseColor}
+            onActivateOverlay={activateOverlay}
           />
         </div>
       </div>

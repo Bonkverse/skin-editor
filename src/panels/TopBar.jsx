@@ -1,6 +1,4 @@
 // src/panels/TopBar.jsx
-// The Overlay button now calls onActivateOverlay instead of just toggleOverlayMode.
-// This enters overlay mode AND switches the panel to the overlay tab in one click.
 
 import { renderSkinToSVG } from "../render/renderSkinToSVG";
 import { svgToPNG } from "../render/svgToPNG";
@@ -12,6 +10,19 @@ export default function TopBar({ camera, bonk, shapes, ui, overlay, onOpenPicker
   const hasOverlay = !!overlay?.overlay?.src;
   const overlayMode = overlay?.overlayMode;
 
+  // Load an image file as overlay — same logic as the canvas drop handler
+  function handleOverlayFile(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const src = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      overlay.setImage(src, img);
+      // After setting the image, activate the overlay tab
+      if (onActivateOverlay) onActivateOverlay();
+    };
+    img.src = src;
+  }
+
   return (
     <div className="top-bar">
       <div className="top-bar-brand">🎮 Bonkverse Editor</div>
@@ -19,7 +30,7 @@ export default function TopBar({ camera, bonk, shapes, ui, overlay, onOpenPicker
       <div className="top-bar-actions">
         <button className="tb-btn" onClick={bonk.exportJSON}>Export</button>
 
-        <label className="tb-btn tb-btn-label">
+        <label className="tb-btn tb-btn-label" title="Import skin JSON">
           Import
           <input type="file" accept=".json" className="file-input"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) bonk.importJSON(f); e.target.value = ""; }} />
@@ -36,14 +47,32 @@ export default function TopBar({ camera, bonk, shapes, ui, overlay, onOpenPicker
         <button className="tb-btn" onClick={() => ui.setShowShortcuts(true)}>Shortcuts</button>
         <div className="tb-sep" />
 
-        {/* Overlay button — one click: enters mode + opens overlay tab */}
+        {/* Upload overlay image — always visible so users know it exists */}
+        <label
+          className="tb-btn tb-btn-label"
+          title="Upload an image to use as a tracing overlay"
+        >
+          🖼️ {hasOverlay ? "Change Overlay" : "Add Overlay"}
+          <input
+            type="file"
+            accept="image/*"
+            className="file-input"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleOverlayFile(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+
+        {/* Overlay edit toggle — only shown when an overlay is loaded */}
         {hasOverlay && (
           <button
             className={`tb-btn ${overlayMode ? "tb-btn-active" : ""}`}
             onClick={onActivateOverlay}
             title="Switch to overlay tab and enter edit mode (O)"
           >
-            🖼️ {overlayMode ? "Editing Overlay" : "Overlay"}
+            {overlayMode ? "Editing Overlay" : "Edit Overlay"}
           </button>
         )}
 

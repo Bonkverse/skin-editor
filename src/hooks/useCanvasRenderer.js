@@ -74,26 +74,43 @@ export function useCanvasRenderer(canvasRef, shapes, camera, baseColor, overlay)
       ctx.strokeStyle = "#333"; ctx.lineWidth = 3 / cam.zoom; ctx.stroke();
 
       // ── Overlay image ─────────────────────────────────────────
+      // Clipped to the ball circle when not in overlay mode.
+      // Unclipped when in overlay mode so the user can drag freely.
       if (ov.src && ov.visible && ov._img) {
         const imgW = ov._img.naturalWidth || ov._img.width || 512;
         const imgH = ov._img.naturalHeight || ov._img.height || 512;
         const fitScale = (BALL_RADIUS_PX * 2) / Math.max(imgW, imgH);
         const drawW = imgW * fitScale * ov.scale;
         const drawH = imgH * fitScale * ov.scale;
+        const overlayMode = canvas._overlayMode ?? false;
+
         ctx.save();
+
+        // Clip to ball circle when not actively editing the overlay
+        if (!overlayMode) {
+          ctx.beginPath();
+          ctx.arc(0, 0, BALL_RADIUS_PX, 0, Math.PI * 2);
+          ctx.clip();
+        }
+
         ctx.translate(ov.x, ov.y); ctx.rotate(ov.angle);
         ctx.globalAlpha = ov.opacity;
         ctx.drawImage(ov._img, -drawW / 2, -drawH / 2, drawW, drawH);
         ctx.globalAlpha = 1;
-        const hw = drawW / 2, hh = drawH / 2;
-        const sw = 1.5 / cam.zoom, hr = OV_HANDLE_RADIUS / cam.zoom;
-        ctx.strokeStyle = OV_BOX_COLOR; ctx.lineWidth = sw;
-        ctx.setLineDash([6 / cam.zoom, 4 / cam.zoom]);
-        ctx.strokeRect(-hw, -hh, drawW, drawH);
-        ctx.setLineDash([]);
-        ctx.beginPath(); ctx.arc(hw, -hh, hr, 0, Math.PI * 2);
-        ctx.fillStyle = OV_HANDLE_FILL; ctx.fill();
-        ctx.strokeStyle = OV_HANDLE_STROKE; ctx.lineWidth = sw; ctx.stroke();
+
+        // Box + handle — only shown in overlay mode
+        if (overlayMode) {
+          const hw = drawW / 2, hh = drawH / 2;
+          const sw = 1.5 / cam.zoom, hr = OV_HANDLE_RADIUS / cam.zoom;
+          ctx.strokeStyle = OV_BOX_COLOR; ctx.lineWidth = sw;
+          ctx.setLineDash([6 / cam.zoom, 4 / cam.zoom]);
+          ctx.strokeRect(-hw, -hh, drawW, drawH);
+          ctx.setLineDash([]);
+          ctx.beginPath(); ctx.arc(hw, -hh, hr, 0, Math.PI * 2);
+          ctx.fillStyle = OV_HANDLE_FILL; ctx.fill();
+          ctx.strokeStyle = OV_HANDLE_STROKE; ctx.lineWidth = sw; ctx.stroke();
+        }
+
         ctx.restore();
       }
 
