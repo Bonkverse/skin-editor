@@ -118,7 +118,7 @@ export function useShapesEditor() {
     const newShapes = [...shapes, newShape];
     commitShapes(newShapes);
     _setSelected([newShapes.length - 1]);
-    if (newShapes.length === 16) alert("✨ You've reached Bonk's limit of 16 shapes! ✨");
+
   }
 
   // Shift+click: toggle an index in/out of the selection
@@ -164,7 +164,6 @@ export function useShapesEditor() {
     }
     _setSelected(hits);
   }
-
 
   function undo() {
     if (history.length === 0) return;
