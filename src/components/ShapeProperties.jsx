@@ -1,4 +1,5 @@
-import {useState, useEffect} from "react";
+// src/components/ShapeProperties.jsx
+import { useState, useEffect } from "react";
 import ColorPicker from "./ColorPicker";
 
 export default function ShapeProperties({
@@ -6,41 +7,34 @@ export default function ShapeProperties({
   index,
   shapes,
   updateShape,
+  deleteShape,
   moveShapeUp,
   moveShapeDown,
   setSelectedIndices,
 }) {
   const [localScale, setLocalScale] = useState(shape.scale);
-  const [localAngle, setLocalAngle] = useState(shape.angle);
+  // Angle: stored internally as radians, displayed/edited as degrees
+  const [localAngle, setLocalAngle] = useState(
+    +((shape.angle * 180) / Math.PI).toFixed(2)
+  );
   const [localX, setLocalX] = useState(shape.x);
   const [localY, setLocalY] = useState(shape.y);
 
   const locked = shape.locked;
 
+  // Sync local state when shape changes externally (drag, keyboard, etc.)
+  useEffect(() => { setLocalScale(shape.scale); }, [shape.scale]);
   useEffect(() => {
-    setLocalScale(shape.scale);
-  }, [shape.scale]);
-
-  useEffect(() => {
-    setLocalAngle(shape.angle);
+    // Only sync angle from external if user isn't mid-type
+    // Convert radians → degrees for display
+    setLocalAngle(+((shape.angle * 180) / Math.PI).toFixed(2));
   }, [shape.angle]);
-
-  useEffect(() => {
-    setLocalX(shape.x);
-    setLocalY(shape.y);
-  }, [shape.x, shape.y]);
-
+  useEffect(() => { setLocalX(shape.x); }, [shape.x]);
+  useEffect(() => { setLocalY(shape.y); }, [shape.y]);
 
   return (
     <div className="shape-props-form">
-      {/* Color */}
-      {/* <ColorPicker
-        color={shape.color}
-        disabled={locked}
-        onChange={(newColor) =>
-          !locked && updateShape(index, { color: newColor })
-        }
-      /> */}
+
       <ColorPicker
         color={shape.color}
         disabled={locked}
@@ -52,7 +46,6 @@ export default function ShapeProperties({
         }
       />
 
-
       <div className="shape-props-grid">
         <label>
           Scale:
@@ -63,21 +56,24 @@ export default function ShapeProperties({
             onChange={(e) => {
               setLocalScale(e.target.value);
               const val = parseFloat(e.target.value);
-              if (!isNaN(val)) updateShape(index, { scale: val });
+              if (!isNaN(val) && val > 0) updateShape(index, { scale: val });
             }}
           />
         </label>
 
         <label>
-          Angle:
+          Angle (°):
           <input
             className="neon-input"
             value={localAngle}
             disabled={locked}
             onChange={(e) => {
               setLocalAngle(e.target.value);
-              const val = parseFloat(e.target.value);
-              if (!isNaN(val)) updateShape(index, { angle: val });
+              const deg = parseFloat(e.target.value);
+              if (!isNaN(deg)) {
+                // Convert degrees → radians for internal storage
+                updateShape(index, { angle: (deg * Math.PI) / 180 });
+              }
             }}
           />
         </label>
@@ -149,7 +145,7 @@ export default function ShapeProperties({
         className="delete-btn"
         disabled={locked}
         onClick={() => {
-          updateShape(index, { _delete: true }); // see note below
+          deleteShape(index);
           setSelectedIndices([]);
         }}
       >

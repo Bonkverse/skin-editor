@@ -1,65 +1,103 @@
 // src/hooks/useCanvasCameraControls.js
-import { useEffect } from "react";
+//
+// Handles zoom + pan via:
+//   - Scroll wheel → zoom centered on cursor
+//   - Middle mouse drag → pan
+//   - Space + left drag → pan
+//
+// Empty-left-drag panning is handled by useCanvasInteraction,
+// which calls canvas._startPan(e) when it hits empty space and
+// the cursor is in grab mode (space held).
+// This avoids any race condition between two mousedown listeners.
 
-export function useCanvasCameraControls(svgRef, camera) {
+import { useEffect, useRef } from "react";
+
+export function useCanvasCameraControls(canvasRef, camera) {
+  const setCameraRef = useRef(camera.setCamera);
+  const cameraRef = camera.cameraRef;
+  const spaceHeldRef = useRef(false);
+
+  // Expose spaceHeldRef on the canvas element so useCanvasInteraction
+  // can read it synchronously without any shared React state.
   useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) return;
+    const canvas = canvasRef.current;
+    if (canvas) canvas._spaceHeld = spaceHeldRef;
+  });
 
-    // let isPanning = false;
-    // let lastX = 0;
-    // let lastY = 0;
+  // ── Space key ─────────────────────────────────────────────────
+  useEffect(() => {
+    function onKeyDown(e) {
+      if (e.code !== "Space") return;
+      if (
+        document.activeElement?.tagName === "INPUT" ||
+        document.activeElement?.tagName === "TEXTAREA" ||
+        document.activeElement?.isContentEditable
+      ) return;
+      e.preventDefault();
+      if (spaceHeldRef.current) return;
+      spaceHeldRef.current = true;
+      const canvas = canvasRef.current;
+      if (canvas) canvas.style.cursor = "grab";
+    }
+    function onKeyUp(e) {
+      if (e.code !== "Space") return;
+      spaceHeldRef.current = false;
+      const canvas = canvasRef.current;
+      if (canvas && !canvas._isPanning) canvas.style.cursor = "";
+    }
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
 
-    // function onMouseDown(e) {
-    //   if (e.button !== 0) return;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    //   // Don't pan when interacting with shapes or overlay
-    //   if (
-    //     e.target.closest("[data-shape]") ||
-    //     e.target.closest("[data-selection]") ||
-    //     e.target.closest("image")
-    //   ) {
-    //     return;
-    //   }
+    // ── Core pan function — also exposed as canvas._startPan ────
+    function startPan(e) {
+      const startCamX = cameraRef.current.x;
+      const startCamY = cameraRef.current.y;
+      const startMouseX = e.clientX;
+      const startMouseY = e.clientY;
+      canvas._isPanning = true;
+      canvas.style.cursor = "grabbing";
 
-    //   isPanning = true;
-    //   lastX = e.clientX;
-    //   lastY = e.clientY;
-    // }
+      function onMove(ev) {
+        const dx = ev.clientX - startMouseX;
+        const dy = ev.clientY - startMouseY;
+        setCameraRef.current((prev) => ({
+          ...prev,
+          x: startCamX + dx,
+          y: startCamY + dy,
+        }));
+      }
+      function onUp() {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        canvas._isPanning = false;
+        canvas.style.cursor = spaceHeldRef.current ? "grab" : "";
+      }
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    }
 
-    // function onMouseMove(e) {
-    //   if (!isPanning) return;
+    // Expose so useCanvasInteraction can trigger pan on empty-drag
+    canvas._startPan = startPan;
 
-    //   const dx = (e.clientX - lastX) / camera.camera.zoom;
-    //   const dy = (e.clientY - lastY) / camera.camera.zoom;
-
-    //   lastX = e.clientX;
-    //   lastY = e.clientY;
-
-    //   camera.setCamera(prev => ({
-    //     x: prev.x + dx,
-    //     y: prev.y + dy,
-    //     zoom: prev.zoom,
-    //   }));
-    // }
-
-    // function onMouseUp() {
-    //   isPanning = false;
-    // }
-
+    // ── Zoom ──────────────────────────────────────────────────────
     function onWheel(e) {
       e.preventDefault();
-
-      const rect = svg.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left - rect.width / 2;
+      const mouseY = e.clientY - rect.top - rect.height / 2;
       const zoomFactor = 1 - e.deltaY * 0.001;
-
-      camera.setCamera(prev => {
+      setCameraRef.current((prev) => {
         const newZoom = Math.min(Math.max(prev.zoom * zoomFactor, 0.2), 5);
         const ratio = newZoom / prev.zoom;
-
         return {
           zoom: newZoom,
           x: mouseX - ratio * (mouseX - prev.x),
@@ -68,16 +106,30 @@ export function useCanvasCameraControls(svgRef, camera) {
       });
     }
 
-    // svg.addEventListener("mousedown", onMouseDown);
-    // window.addEventListener("mousemove", onMouseMove);
-    // window.addEventListener("mouseup", onMouseUp);
-    svg.addEventListener("wheel", onWheel, { passive: false });
+    // ── mousedown: ONLY middle mouse and Space+left ───────────────
+    // Empty-left-drag is routed through useCanvasInteraction → canvas._startPan()
+    function onMouseDown(e) {
+      const isMiddle = e.button === 1;
+      const isSpaceLeft = e.button === 0 && spaceHeldRef.current;
+      if (!isMiddle && !isSpaceLeft) return;
+      e.preventDefault();
+      startPan(e);
+    }
+
+    function onAuxClick(e) {
+      if (e.button === 1) e.preventDefault();
+    }
+
+    canvas.addEventListener("wheel", onWheel, { passive: false });
+    canvas.addEventListener("mousedown", onMouseDown);
+    canvas.addEventListener("auxclick", onAuxClick);
 
     return () => {
-      // svg.removeEventListener("mousedown", onMouseDown);
-      // window.removeEventListener("mousemove", onMouseMove);
-      // window.removeEventListener("mouseup", onMouseUp);
-      svg.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("wheel", onWheel);
+      canvas.removeEventListener("mousedown", onMouseDown);
+      canvas.removeEventListener("auxclick", onAuxClick);
+      delete canvas._startPan;
+      delete canvas._spaceHeld;
     };
-  }, [camera, svgRef]);
+  }, []);
 }

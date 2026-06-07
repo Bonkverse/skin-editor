@@ -1,10 +1,27 @@
 // src/utils/screenToWorld.js
-export function screenToWorld(clientX, clientY, camera) {
-  const cx = window.innerWidth / 2;
-  const cy = window.innerHeight / 2;
+//
+// Converts screen mouse coords to world (canvas) coordinates.
+//
+// The renderer centers the world at the CSS center of the canvas element:
+//   ctx.translate(W/(2*dpr) + cam.x,  H/(2*dpr) + cam.y)
+//
+// So we must invert from the canvas element's center, NOT window center.
+// Always pass canvasEl. The fallback is only for backwards compat.
+
+export function screenToWorld(clientX, clientY, cam, canvasEl) {
+  let cx, cy;
+
+  if (canvasEl) {
+    const rect = canvasEl.getBoundingClientRect();
+    cx = rect.left + rect.width / 2;
+    cy = rect.top + rect.height / 2;
+  } else {
+    cx = window.innerWidth / 2;
+    cy = window.innerHeight / 2;
+  }
 
   return {
-    x: (clientX - camera.camera.x - cx) / camera.camera.zoom,
-    y: (clientY - camera.camera.y - cy) / camera.camera.zoom,
+    x: (clientX - cam.x - cx) / cam.zoom,
+    y: (clientY - cam.y - cy) / cam.zoom,
   };
 }

@@ -8,27 +8,27 @@ export default function WelcomeModal({ open, onClose }) {
         <h2>🎨 Welcome to the Bonkverse Skin Editor!</h2>
 
         <p style={{ fontSize: "15px", lineHeight: "1.6", color: "#ccc" }}>
-          Here’s what you can do right now:
+          Here's what you can do:
         </p>
 
-        <ul style={{ fontSize: "14px", lineHeight: "1.6", color: "#ccc" }}>
-          <li>🧩 <b>Add & Edit Shapes:</b> Click any shape to add it, then drag, rotate, or scale using handles.</li>
-          <li>🎨 <b>Change Colors:</b> Use the color picker to recolor selected shapes or the base body.</li>
-          <li>↕️ <b>Layer Controls:</b> Move shapes forward/back or reorder layers using the “Move Up/Down” buttons.</li>
-          <li>🖱️ <b>Multi-select:</b> Hold <b>Shift</b> or <b>Ctrl</b> to select and move multiple shapes at once.</li>
-          <li>📷 <b>Image Overlay:</b> Drag and drop an image onto the canvas to trace over it (adjust opacity or hide it anytime).</li>
-          <li>💾 <b>Export / Import:</b> Save your skin as JSON or load one back in.</li>
-          <li>👕 <b>Wear Skin:</b> Apply your current design to your Bonk.io account directly.</li>
-          <li>⚡ <b>Keyboard Shortcuts:</b> Move, rotate, scale, flip, duplicate, or delete using keys (press <b>Shift + ?</b> to view all).</li>
-          <li>🧭 <b>Camera:</b> Zoom or pan with your mouse wheel and drag empty space to move around.</li>
+        <ul style={{ fontSize: "14px", lineHeight: "1.8", color: "#ccc" }}>
+          <li>🧩 <b>Add Shapes:</b> Click any shape in the panel to add it to the canvas.</li>
+          <li>🖱️ <b>Move:</b> Drag a shape to reposition it. Drag empty canvas to pan.</li>
+          <li>🔄 <b>Scale + Rotate:</b> Drag the teal handle at the top-right corner of a selected shape.</li>
+          <li>🎨 <b>Colors:</b> Select a shape and use the color picker on the right. Change the base ball color at the top.</li>
+          <li>📐 <b>Angle input:</b> Angles are in degrees — type <b>90</b> to rotate 90° sideways.</li>
+          <li>↕️ <b>Layers:</b> Use Move Up / Move Down or drag in the Layers panel to reorder shapes.</li>
+          <li>🔍 <b>Zoom:</b> Scroll wheel to zoom in/out, centered on your cursor.</li>
+          <li>🧭 <b>Pan:</b> Drag empty canvas space, hold <b>Space</b> and drag, or use middle mouse button.</li>
+          <li>⌨️ <b>Shortcuts:</b> Arrow keys to nudge, <b>R</b> to rotate, <b>[ ]</b> to scale, <b>X/Y</b> to flip, <b>Ctrl+D</b> to duplicate, <b>Del</b> to delete. Press <b>Shortcuts</b> in the toolbar for the full list.</li>
+          <li>💾 <b>Export / Import:</b> Save your skin as JSON or load one back in. Export as PNG image.</li>
+          <li>🚀 <b>Publish:</b> Publish your skin to Bonkverse and share it with others.</li>
+          <li>👕 <b>Wear Skin:</b> Apply your design to your Bonk.io account directly.</li>
+          <li>📷 <b>Image Overlay:</b> Drag and drop an image onto the canvas to trace over it.</li>
         </ul>
 
-        <button
-          className="close-btn"
-          style={{ marginTop: "20px" }}
-          onClick={onClose}
-        >
-          Got it!
+        <button className="close-btn" onClick={onClose}>
+          Let's go!
         </button>
       </div>
     </div>
