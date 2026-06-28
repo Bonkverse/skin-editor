@@ -6,6 +6,8 @@ import {
 } from "../bonk/constants";
 import { svgCache } from "../utils/svgCache";
 import { validateSkin, warnBeforeBonk } from "../bonk/validateForBonk";
+import { encodeSkin } from "../utils/encodeSkin";
+import { toast } from "../utils/toast";
 
 /**
  * Bonk skin import / export system
@@ -39,6 +41,15 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
     return buildSkinObject();
   }
 
+  /**
+   * Bonk skin code (percent-encoded base64) — the string bonk's avatar
+   * endpoint and your publish endpoint both expect. Shared by Wear + Publish
+   * so they never encode differently.
+   */
+  function buildSkinCode() {
+    return encodeSkin(buildSkinObject());
+  }
+
   /** Pure validation report (no toast) — editor shapes + svgCache. */
   function validate() {
     return validateSkin(shapes.shapes, svgCache);
@@ -64,6 +75,7 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
     a.download = "bonk-skin.json";
     a.click();
     URL.revokeObjectURL(url);
+    toast("Skin exported", { type: "success", duration: 2200 });
   }
 
   /** IMPORT from a .json file (bonk-space → editor-space). */
@@ -72,26 +84,32 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
 
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const parsed = JSON.parse(evt.target.result);
+      try {
+        const parsed = JSON.parse(evt.target.result);
 
-      setBaseColor(`#${parsed.bc.toString(16).padStart(6, "0")}`);
+        setBaseColor(`#${parsed.bc.toString(16).padStart(6, "0")}`);
 
-      const newShapes = parsed.layers
-        .slice()
-        .reverse()
-        .map((l) => ({
-          id: l.id,
-          scale: parseFloat(l.scale) * BONK_SCALE_FACTOR,
-          angle: (parseFloat(l.angle) * Math.PI) / 180,
-          x: parseFloat(l.x) * BONK_X_POS_FACTOR,
-          y: parseFloat(l.y) * BONK_Y_POS_FACTOR,
-          flipX: !!l.flipX,
-          flipY: !!l.flipY,
-          color: `#${l.color.toString(16).padStart(6, "0")}`,
-        }));
+        const newShapes = parsed.layers
+          .slice()
+          .reverse()
+          .map((l) => ({
+            id: l.id,
+            scale: parseFloat(l.scale) * BONK_SCALE_FACTOR,
+            angle: (parseFloat(l.angle) * Math.PI) / 180,
+            x: parseFloat(l.x) * BONK_X_POS_FACTOR,
+            y: parseFloat(l.y) * BONK_Y_POS_FACTOR,
+            flipX: !!l.flipX,
+            flipY: !!l.flipY,
+            color: `#${l.color.toString(16).padStart(6, "0")}`,
+          }));
 
-      shapes.commitShapes(newShapes);
-      shapes.clearSelection();
+        shapes.commitShapes(newShapes);
+        shapes.clearSelection();
+        toast("Skin imported", { type: "success", duration: 2200 });
+      } catch (err) {
+        console.error("Import failed", err);
+        toast("Couldn't read that file — is it a valid skin JSON?", { type: "error", duration: 3500 });
+      }
     };
 
     reader.readAsText(file);
@@ -103,6 +121,7 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
     exportJSON,
     importJSON,
     exportSkinObject, // pure
+    buildSkinCode,    // bonk skin code → Wear/Publish
     validate,         // pure report → for custom UI
     checkBeforeBonk,  // validates + toasts → for Wear/Publish
   };
