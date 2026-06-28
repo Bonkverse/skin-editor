@@ -195,8 +195,10 @@ export default function MainPanel({ shapes, bonk, overlay, showPanel, setShowPan
                 onClick={() => {
                   if (isMulti) shapes.deleteSelected();
                   else { shapes.deleteShape(selectedIdx); shapes.clearSelection(); }
+
                 }}>
                 {isMulti ? `Delete ${selectedIndices.length} Shapes` : "Delete Shape"}
+
               </button>
             </div>
           )}

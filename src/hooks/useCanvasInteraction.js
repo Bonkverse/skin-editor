@@ -14,6 +14,7 @@ import {
 } from "../canvas/drawSelectionOverlay";
 import { svgCache } from "../utils/svgCache";
 import { BALL_RADIUS_PX } from "../bonk/constants";
+import { toast } from "../utils/toast";
 
 export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
   const shapesRef = useRef(shapes.shapes);
@@ -74,7 +75,9 @@ export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
       const shift = e.shiftKey;
 
       if ((e.key === "o" || e.key === "O") && overlayRef.current.src) {
-        toggleOverlayModeRef.current(); return;
+        toggleOverlayModeRef.current();
+        toast(overlayModeRef.current ? "Overlay mode off" : "Overlay mode on", { type: "info", duration: 1400 });
+        return;
       }
 
       const allShapes = shapesRef.current;
@@ -88,11 +91,21 @@ export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
 
       if (ctrl && e.key === "v") {
         e.preventDefault();
-        if (clipboardRef.current) {
-          const src = clipboardRef.current;
-          const next = [...allShapes, { ...src, x: src.x + 15, y: src.y + 15 }];
+        const clip = clipboardRef.current;
+        if (clip && clip.length > 0) {
+          // Paste all clipboard shapes at once, preserving their relative
+          // positions to each other. New shapes are appended in order,
+          // and ALL of them become the new selection (multi-select paste).
+          const startLen = allShapes.length;
+          const pasted = clip.map(s => ({ ...s }));
+          const next = [...allShapes, ...pasted];
           commitShapesRef.current(next);
-          setSelectedRef.current([next.length - 1]);
+          const newIndices = pasted.map((_, i) => startLen + i);
+          setSelectedRef.current(newIndices);
+          toast(
+            clip.length > 1 ? `${clip.length} shapes pasted` : "Shape pasted",
+            { type: "success", duration: 1600 }
+          );
         }
         return;
       }
@@ -105,7 +118,7 @@ export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
 
       if (e.key === "Backspace" || e.key === "Delete") {
         e.preventDefault();
-        if (hasMulti) { deleteSelectedRef.current(); return; }
+        if (hasMulti) { const n = selected.length; deleteSelectedRef.current(); toast(`Deleted ${n} shapes`, { type: "warn", duration: 1800 }); return; }
         if (idx !== null && !shape?.locked) {
           commitShapesRef.current(allShapes.filter((_, i) => i !== idx));
           clearSelectionRef.current();
@@ -119,16 +132,43 @@ export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
       if (e.key === "ArrowUp")    { e.preventDefault(); hasMulti ? nudgeSelectedRef.current(0, -step) : (shape && updateShapeRef.current(idx, { y: shape.y - step })); return; }
       if (e.key === "ArrowDown")  { e.preventDefault(); hasMulti ? nudgeSelectedRef.current(0, step)  : (shape && updateShapeRef.current(idx, { y: shape.y + step })); return; }
 
-      if (idx === null || !shape || shape.locked) return;
-
-      if (ctrl && e.key === "c") { e.preventDefault(); clipboardRef.current = { ...shape }; return; }
-      if (ctrl && e.key === "d") {
+      // ── Copy: works for single or multi-select ─────────────────
+      // Must run BEFORE the single-shape guard below so multi-select copy
+      // isn't blocked by `shape` only referring to the first selected index.
+      // Locked shapes are excluded — copying a locked shape's data is fine,
+      // but conventionally locked = "don't touch", so we skip them.
+      if (ctrl && e.key === "c") {
         e.preventDefault();
-        const next = [...allShapes, { ...shape, x: shape.x + 15, y: shape.y + 15 }];
-        commitShapesRef.current(next);
-        setSelectedRef.current([next.length - 1]);
+        const copyable = selected.filter(i => allShapes[i] && !allShapes[i].locked);
+        if (copyable.length === 0) return;
+        clipboardRef.current = copyable.map(i => ({ ...allShapes[i] }));
+        toast(
+          copyable.length > 1 ? `${copyable.length} shapes copied` : "Shape copied",
+          { duration: 1400 }
+        );
         return;
       }
+
+      // ── Duplicate: works for single or multi-select ─────────────
+      // Ctrl+D duplicates in place (no offset) — same convention as paste.
+      if (ctrl && e.key === "d") {
+        e.preventDefault();
+        const dupeable = selected.filter(i => allShapes[i] && !allShapes[i].locked);
+        if (dupeable.length === 0) return;
+        const startLen = allShapes.length;
+        const dupes = dupeable.map(i => ({ ...allShapes[i] }));
+        const next = [...allShapes, ...dupes];
+        commitShapesRef.current(next);
+        const newIndices = dupes.map((_, i) => startLen + i);
+        setSelectedRef.current(newIndices);
+        toast(
+          dupeable.length > 1 ? `${dupeable.length} shapes duplicated` : "Shape duplicated",
+          { type: "success", duration: 1600 }
+        );
+        return;
+      }
+
+      if (idx === null || !shape || shape.locked) return;
       if (e.key === "r" || e.key === "R") {
         e.preventDefault();
         const d = (5 * Math.PI) / 180;
@@ -252,9 +292,12 @@ export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
       canvas._rubberBandHits = new Set();
 
       // Inclusion test: rubber-band rect overlaps shape's axis-aligned bounding box.
-      // We compute the shape's world-space AABB by projecting all 4 rotated corners
-      // and taking min/max — same approach as drawMultiSelectionOverlay.
-      // A shape is included as soon as ANY part of it overlaps the rect.
+      // SHRINK: we inset the shape's AABB by a small fraction before testing so
+      // the rubber-band must visually overlap the shape, not just its bounding box.
+      // Without this, shapes get highlighted slightly before the rects visually touch
+      // because getBBox() can include stroke/padding that isn't rendered.
+      const AABB_SHRINK = 0.15; // inset each side by 15% of half-extent
+
       function computeHits(rb) {
         const rMinX = Math.min(rb.x1, rb.x2), rMaxX = Math.max(rb.x1, rb.x2);
         const rMinY = Math.min(rb.y1, rb.y2), rMaxY = Math.max(rb.y1, rb.y2);
@@ -265,10 +308,9 @@ export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
           if (s.hidden || s.locked) continue;
           const meta = svgCache.get(s.id);
           if (!meta) continue;
-          const hw = (meta.w / 2) * s.scale;
-          const hh = (meta.h / 2) * s.scale;
+          const hw = (meta.w / 2) * s.scale * (1 - AABB_SHRINK);
+          const hh = (meta.h / 2) * s.scale * (1 - AABB_SHRINK);
           const cos = Math.cos(s.angle), sin = Math.sin(s.angle);
-          // Project 4 corners into world space and find AABB
           let sMinX = Infinity, sMaxX = -Infinity, sMinY = Infinity, sMaxY = -Infinity;
           for (const [lx, ly] of [[-hw,-hh],[hw,-hh],[hw,hh],[-hw,hh]]) {
             const wx = s.x + lx * cos - ly * sin;
@@ -276,7 +318,6 @@ export function useCanvasInteraction(canvasRef, shapes, camera, overlay) {
             if (wx < sMinX) sMinX = wx; if (wx > sMaxX) sMaxX = wx;
             if (wy < sMinY) sMinY = wy; if (wy > sMaxY) sMaxY = wy;
           }
-          // AABB intersection: overlaps if not separated on either axis
           if (sMaxX >= rMinX && sMinX <= rMaxX && sMaxY >= rMinY && sMinY <= rMaxY) {
             hits.add(i);
           }

@@ -5,8 +5,11 @@
 //   - Selected rows show a teal highlight
 //   - Multi-selected rows show a slightly different tint so you can
 //     tell at a glance which shapes are in the group
+//   - Per-row bonk-compatibility badge (⛔ destructive / ⚠ soft), live
 
 import { useState } from "react";
+import { svgCache } from "../utils/svgCache";
+import { editorShapeIssues } from "../bonk/validateForBonk";
 
 export default function LayersTab({ shapes }) {
   const [dragIndex, setDragIndex] = useState(null);
@@ -45,6 +48,12 @@ export default function LayersTab({ shapes }) {
           const selected = shapes.isSelected(realIndex);
           const isDragging = dragIndex === i;
           const isPlaceholder = hoverIndex === i && dragIndex !== null && dragIndex !== i;
+
+          // Live bonk-compatibility issues (needs svg meta for off-canvas test)
+          const issues = editorShapeIssues(s, svgCache.get(s.id));
+          const severity = issues.length
+            ? (issues.some((iss) => iss.level === "error") ? "error" : "warn")
+            : null;
 
           // Visual state
           let bg = "rgba(255,255,255,0.04)";
@@ -101,12 +110,26 @@ export default function LayersTab({ shapes }) {
                   color: selected ? "#00ffcc" : "#ccc",
                   cursor: s.locked ? "not-allowed" : "pointer",
                   fontSize: 12, padding: 0,
+                  display: "flex", alignItems: "center",
                 }}
                 title={s.locked ? "Locked" : "Click to select, Shift+click to multi-select"}
               >
-                Shape {s.id}
+                <span>Shape {s.id}</span>
                 {selected && isMulti && (
                   <span style={{ fontSize: 9, color: "rgba(0,255,204,0.5)", marginLeft: 4 }}>✦</span>
+                )}
+                {severity && (
+                  <span
+                    title={issues.map((iss) => iss.msg).join("\n")}
+                    style={{
+                      marginLeft: 5,
+                      fontSize: 11,
+                      flexShrink: 0,
+                      color: severity === "error" ? "#ff5a5a" : "#ffb432",
+                    }}
+                  >
+                    {severity === "error" ? "⛔" : "⚠"}
+                  </span>
                 )}
               </button>
 
