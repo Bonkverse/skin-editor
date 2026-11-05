@@ -22,6 +22,7 @@ import { toast } from "../utils/toast";
 import { useCamera } from "../hooks/useCamera";
 import { useOverlay } from "../hooks/useOverlay";
 import { useEditorUI } from "../hooks/useEditorUI";
+import { useCanvasBackground } from "../hooks/useCanvasBackground";
 import { useBonkSerializer } from "../hooks/useBonkSerializer";
 import { useShapesEditor } from "../hooks/useShapesEditor";
 import { useSkinName } from "../hooks/useSkinName";
@@ -31,6 +32,7 @@ export default function SkinEditorInner() {
   const camera = useCamera();
   const overlay = useOverlay();
   const ui = useEditorUI();
+  const canvasBackground = useCanvasBackground();
   const skinName = useSkinName();
 
   const [baseColor, setBaseColor] = useState("#ffffff");
@@ -187,6 +189,7 @@ export default function SkinEditorInner() {
       <TopBar
         camera={camera} bonk={bonk} shapes={shapes} ui={ui} overlay={overlay}
         skinName={skinName}
+        canvasBackground={canvasBackground}
         onOpenPicker={() => setShowPicker(true)}
         onActivateOverlay={activateOverlay}
         onWearClick={onWearClick}
@@ -197,7 +200,7 @@ export default function SkinEditorInner() {
         <MainPanel shapes={shapes} bonk={bonk} overlay={overlay}
           showPanel={showPanel} setShowPanel={setShowPanel} onTabRef={panelSetTab} />
         <div className="canvas-area">
-          <EditorCanvas shapes={shapes} camera={camera} overlay={overlay} baseColor={baseColor} onActivateOverlay={activateOverlay} />
+          <EditorCanvas shapes={shapes} camera={camera} overlay={overlay} baseColor={baseColor} canvasBg={canvasBackground.canvasBg} onActivateOverlay={activateOverlay} />
         </div>
       </div>
 

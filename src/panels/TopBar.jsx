@@ -1,11 +1,12 @@
 // src/panels/TopBar.jsx
 import { renderSkinToSVG } from "../render/renderSkinToSVG";
 import { svgToPNG } from "../render/svgToPNG";
+import CanvasBackgroundPicker from "../components/CanvasBackgroundPicker";
 
 export default function TopBar({
   camera, bonk, shapes, ui, overlay,
   onOpenPicker, onActivateOverlay,
-  skinName, onWearClick, onPublishClick,
+  skinName, canvasBackground, onWearClick, onPublishClick,
 }) {
   const hasOverlay = !!overlay?.overlay?.src;
   const overlayMode = overlay?.overlayMode;
@@ -51,6 +52,7 @@ export default function TopBar({
 
         <div className="tb-sep" />
         <button className="tb-btn" onClick={camera.resetCamera}>Reset View</button>
+        <CanvasBackgroundPicker {...canvasBackground} />
         <button className="tb-btn" onClick={() => ui.setShowShortcuts(true)}>Shortcuts</button>
         <div className="tb-sep" />
 
