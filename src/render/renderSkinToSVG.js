@@ -1,9 +1,12 @@
 // src/render/renderSkinToSVG.js
 import { BALL_RADIUS_PX } from "../bonk/constants.js";
-import { renderLayerToSVG } from "./renderLayerToSVG.js";
+import { renderLayerToSVG, renderShapeDef } from "./renderLayerToSVG.js";
 
 export function renderSkinToSVG(shapes, baseColor) {
   const r = BALL_RADIUS_PX;
+
+  // Each distinct shape is written once into <defs>; layers reference it.
+  const uniqueShapeIds = [...new Set(shapes.map((s) => s.id))];
 
   return `
 <svg
@@ -16,6 +19,7 @@ export function renderSkinToSVG(shapes, baseColor) {
     <clipPath id="playerClip">
       <circle cx="0" cy="0" r="${r}" />
     </clipPath>
+    ${uniqueShapeIds.map(renderShapeDef).join("\n")}
   </defs>
 
   <!-- Player outline -->
