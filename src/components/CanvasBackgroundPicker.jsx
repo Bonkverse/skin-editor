@@ -1,7 +1,7 @@
 // src/components/CanvasBackgroundPicker.jsx
 // Top-bar control for the canvas background color (see useCanvasBackground).
 import { useEffect, useRef, useState } from "react";
-import { HexColorPicker } from "react-colorful";
+import ColorPicker from "./ColorPicker";
 import { DEFAULT_CANVAS_BG } from "../hooks/useCanvasBackground";
 
 const PRESETS = [
@@ -14,16 +14,16 @@ const PRESETS = [
 
 export default function CanvasBackgroundPicker({ canvasBg, setCanvasBg, resetCanvasBg }) {
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState(canvasBg);
   const rootRef = useRef(null);
-
-  useEffect(() => setDraft(canvasBg), [canvasBg]);
 
   // Close on outside click or Escape.
   useEffect(() => {
     if (!open) return;
     function onPointerDown(e) {
-      if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false);
+      if (rootRef.current?.contains(e.target)) return;
+      // The color format dropdown renders outside this element; it still counts as inside.
+      if (e.target.closest?.(".cpx-popover")) return;
+      setOpen(false);
     }
     function onKeyDown(e) {
       if (e.key === "Escape") setOpen(false);
@@ -35,12 +35,6 @@ export default function CanvasBackgroundPicker({ canvasBg, setCanvasBg, resetCan
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open]);
-
-  function commitDraft(value) {
-    const hex = value.startsWith("#") ? value : `#${value}`;
-    if (/^#[0-9a-f]{6}$/i.test(hex)) setCanvasBg(hex);
-    else setDraft(canvasBg);
-  }
 
   return (
     <div className="bg-picker" ref={rootRef}>
@@ -66,23 +60,8 @@ export default function CanvasBackgroundPicker({ canvasBg, setCanvasBg, resetCan
                 onClick={() => setCanvasBg(p.hex)}
               />
             ))}
-          </div>
-
-          <HexColorPicker color={canvasBg} onChange={setCanvasBg} />
-
-          <div className="bg-picker-row">
-            <input
-              className="bg-picker-hex"
-              value={draft}
-              spellCheck={false}
-              maxLength={7}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={(e) => commitDraft(e.target.value.trim())}
-              onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-              aria-label="Canvas hex color"
-            />
             <button
-              className="tb-btn"
+              className="tb-btn bg-picker-default"
               onClick={resetCanvasBg}
               disabled={canvasBg === DEFAULT_CANVAS_BG}
               title="Back to the default dark canvas"
@@ -90,6 +69,13 @@ export default function CanvasBackgroundPicker({ canvasBg, setCanvasBg, resetCan
               Default
             </button>
           </div>
+
+          <ColorPicker
+            color={canvasBg}
+            onPreview={setCanvasBg}
+            onCommit={setCanvasBg}
+            showSaved={false}
+          />
 
           <p className="bg-picker-note">Only changes the editor area behind your skin, for you. Your skin and its Background color aren't affected.</p>
         </div>
