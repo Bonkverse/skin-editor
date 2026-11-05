@@ -20,10 +20,28 @@ export function useShapesEditor() {
 
   const clearSelection = () => _setSelected([]);
 
+  // Live edits (dragging a shape, dragging in the color picker) are sent with
+  // { commit: false } and then finished with one { commit: true } call. The
+  // shapes as they were before the first live edit are kept here, so the
+  // finishing commit records them as a single undo step, even when the last
+  // live edit already applied the final value.
+  const previewBaseRef = useRef(null);
+
+  // Call inside a setShapes updater with the shapes before this change.
+  function recordHistory(prev, commit) {
+    if (!commit) {
+      if (!previewBaseRef.current) previewBaseRef.current = prev;
+      return;
+    }
+    const base = previewBaseRef.current ?? prev;
+    previewBaseRef.current = null;
+    setHistory((h) => [...h.slice(-50), base]);
+    setFuture([]);
+  }
+
   function commitShapes(nextShapes) {
     setShapes((prev) => {
-      setHistory((h) => [...h.slice(-50), prev]);
-      setFuture([]);
+      recordHistory(prev, true);
       return nextShapes;
     });
   }
@@ -35,9 +53,13 @@ export function useShapesEditor() {
       if (!curr) return prev;
       let changed = false;
       for (const k in patch) { if (curr[k] !== patch[k]) { changed = true; break; } }
-      if (!changed) return prev;
+      if (!changed) {
+        // Finishing a live edit whose last preview already applied this value.
+        if (commit && previewBaseRef.current) recordHistory(prev, true);
+        return prev;
+      }
       const next = prev.map((s, i) => i === index ? { ...s, ...patch } : s);
-      if (commit) { setHistory(h => [...h.slice(-50), prev]); setFuture([]); }
+      recordHistory(prev, commit);
       return next;
     });
   }
@@ -52,7 +74,7 @@ export function useShapesEditor() {
       const next = prev.map((s, i) =>
         sel.has(i) && !s.locked ? { ...s, ...patch } : s
       );
-      if (commit) { setHistory(h => [...h.slice(-50), prev]); setFuture([]); }
+      recordHistory(prev, commit);
       return next;
     });
   }
@@ -66,7 +88,7 @@ export function useShapesEditor() {
       const next = prev.map((s, i) =>
         sel.has(i) && !s.locked ? { ...s, x: s.x + dx, y: s.y + dy } : s
       );
-      if (commit) { setHistory(h => [...h.slice(-50), prev]); setFuture([]); }
+      recordHistory(prev, commit);
       return next;
     });
   }
@@ -82,7 +104,7 @@ export function useShapesEditor() {
         if (!start || s.locked) return s;
         return { ...s, x: start.x + dx, y: start.y + dy };
       });
-      if (commit) { setHistory(h => [...h.slice(-50), prev]); setFuture([]); }
+      recordHistory(prev, commit);
       return next;
     });
   }
@@ -90,8 +112,7 @@ export function useShapesEditor() {
   function deleteShape(index) {
     setShapes((prev) => {
       const next = prev.filter((_, i) => i !== index);
-      setHistory((h) => [...h.slice(-50), prev]);
-      setFuture([]);
+      recordHistory(prev, true);
       return next;
     });
     _setSelected([]);
@@ -102,8 +123,7 @@ export function useShapesEditor() {
     if (sel.size === 0) return;
     setShapes(prev => {
       const next = prev.filter((_, i) => !sel.has(i));
-      setHistory(h => [...h.slice(-50), prev]);
-      setFuture([]);
+      recordHistory(prev, true);
       return next;
     });
     _setSelected([]);
@@ -170,6 +190,7 @@ export function useShapesEditor() {
     const prev = history[history.length - 1];
     setHistory((h) => h.slice(0, -1));
     setFuture((f) => [shapes, ...f]);
+    previewBaseRef.current = null;
     setShapes(prev);
     _setSelected((sel) => sel.filter((i) => i < prev.length));
   }
@@ -179,6 +200,7 @@ export function useShapesEditor() {
     const next = future[0];
     setFuture((f) => f.slice(1));
     setHistory((h) => [...h, shapes]);
+    previewBaseRef.current = null;
     setShapes(next);
     _setSelected((sel) => sel.filter((i) => i < next.length));
   }

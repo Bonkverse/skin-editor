@@ -5,7 +5,7 @@ import { useCanvasRenderer } from "../hooks/useCanvasRenderer";
 import { useCanvasInteraction } from "../hooks/useCanvasInteraction";
 import { useCanvasCameraControls } from "../hooks/useCanvasCameraControls";
 
-export default function EditorCanvas({ shapes, camera, overlay, baseColor, onActivateOverlay }) {
+export default function EditorCanvas({ shapes, camera, overlay, baseColor, canvasBg, onActivateOverlay }) {
   const canvasRef = useRef(null);
 
   useCanvasRenderer(canvasRef, shapes, camera, baseColor, overlay);
@@ -33,7 +33,7 @@ export default function EditorCanvas({ shapes, camera, overlay, baseColor, onAct
     <canvas
       ref={canvasRef}
       className="editor-canvas"
-      style={{ width: "100vw", height: "100vh", display: "block", cursor: "default" }}
+      style={{ width: "100vw", height: "100vh", display: "block", cursor: "default", background: canvasBg }}
       onDragOver={onDragOver}
       onDrop={onDrop}
     />
