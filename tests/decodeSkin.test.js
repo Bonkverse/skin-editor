@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 
 import { decodeSkinCode } from "../src/bonk/decode/decodeSkinNode.js";
+import { encodeSkin } from "../src/utils/encodeSkin.js";
 
 // Real skin codes from the Bonkverse gallery whose layer lists have empty
 // slots (layers removed in bonk.io). Before the fix the decoder threw on the
@@ -108,4 +109,24 @@ test("a corrupt slot is a clear error, not a silent misread", () => {
   const bytes = Buffer.from(WITH_EMPTY_SLOTS.middleSlotsEmpty.replace(/%2B/g, "+"), "base64");
   bytes[9] = 0x0b;
   assert.throws(() => decodeSkinCode(bytes.toString("base64")), /layer slot 0: unexpected byte 0xb/);
+});
+
+test("reads codes this editor wrote with more than 63 layers", () => {
+  // The encoder writes the slot count as one byte (85 layers -> 0xab), not an
+  // AMF3 integer. Gallery skins 9670 and 12027 were saved like this.
+  const layers = Array.from({ length: 85 }, (_, i) => ({
+    id: 13, scale: 0.1, angle: 0, x: i / 10, y: 0, flipX: false, flipY: false, color: 0x112233,
+  }));
+  const code = encodeSkin({ bc: 0xfafafa, layers });
+
+  const skin = decodeSkinCode(code);
+  assert.equal(skin.layers.length, 85);
+  assert.equal(skin.bc, 0xfafafa);
+  assert.ok(Math.abs(skin.layers[84].x - 8.4) < 1e-5);
+});
+
+test("removes URL-encoding applied three times", () => {
+  const code = WITH_EMPTY_SLOTS.firstSlotEmpty;
+  const triple = code.replace(/\+/g, "%25252B").replace(/=/g, "%25253D");
+  assert.deepEqual(decodeSkinCode(triple), decodeSkinCode(code));
 });

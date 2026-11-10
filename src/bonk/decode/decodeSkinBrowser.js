@@ -1,9 +1,12 @@
 import { decodeSkinBytes } from "./decodeSkinCore";
 
 export function decodeSkinCode(code) {
-  // Decode once, then again if still URL-encoded (handles double-encoded DB codes)
-  let decoded = decodeURIComponent(code);
-  if (decoded.includes("%")) decoded = decodeURIComponent(decoded);
+  // Remove URL-encoding: stored codes can be encoded up to three times
+  // (twice from BonkLeagues, three times in at least one gallery skin).
+  let decoded = code;
+  for (let pass = 0; pass < 3 && decoded.includes("%"); pass++) {
+    decoded = decodeURIComponent(decoded);
+  }
   const binary = atob(decoded);
 
   const bytes = new Uint8Array(binary.length);
