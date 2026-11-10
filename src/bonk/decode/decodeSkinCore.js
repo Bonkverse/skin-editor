@@ -12,6 +12,21 @@
 // (0x00) instead of a layer. Layers come out in slot order.
 
 export function decodeSkinBytes(bytes) {
+  try {
+    return readSkin(bytes, false);
+  } catch (error) {
+    // This editor's encoder wrote the slot count as one byte, not an AMF3
+    // integer, so its skins with more than 63 layers carry a count byte of
+    // 0x80 or more. Read those the way it wrote them.
+    try {
+      return readSkin(bytes, true);
+    } catch {
+      throw error;
+    }
+  }
+}
+
+function readSkin(bytes, oneByteCount) {
   let i = 0;
 
   const readU8 = () => {
@@ -106,7 +121,7 @@ export function decodeSkinBytes(bytes) {
   readU16(); // version
   readU8(); // 0x09 (array)
 
-  const denseCount = readU29() >> 1;
+  const denseCount = (oneByteCount ? readU8() : readU29()) >> 1;
 
   // --- LAYERS ---
   const slots = []; // [slot index, layer]
