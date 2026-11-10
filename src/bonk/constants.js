@@ -8,7 +8,9 @@
 // export const BONK_Y_POS_FACTOR = 21.5;
 
 export const CANVAS_SIZE = 700;
-export const TOTAL_BONK_SHAPES = 114;
+// Shape 115 is the whisp: bonk.io's editor doesn't list it (a bug in the
+// game), but skins can wear it and BonkLeagues shows it.
+export const TOTAL_BONK_SHAPES = 115;
 export const BALL_RADIUS_UNITS = 50;
 export const BALL_RADIUS_PX = CANVAS_SIZE / 2;            // 350
 export const PX_PER_UNIT = BALL_RADIUS_PX / BALL_RADIUS_UNITS; // 7
