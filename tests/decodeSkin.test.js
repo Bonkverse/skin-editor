@@ -66,6 +66,43 @@ test("empty slots change nothing about the layers that are there", () => {
   );
 });
 
+// Real skin codes whose layer list has a gap, so AS3 wrote the slots past it
+// as "index" -> layer pairs before the dense part. #9's decoder read the
+// first key as a layer and refused them; the decoder before #9 misread them
+// as garbage layers (a wrong image, no error).
+const SPARSE = {
+  // slots 6 and 7 hold null in the associative part; 4 dense layers
+  skin166:
+    "CgcDYQACCQkDNgADNwEBCgcFYWwAAQBDPoAAAAAAAAAAAAAAAAAAAAAAADEbkgoFAAEAQz6AAAAAAAAAAAAAAAAAAAABAAC3HBwKBQABAEM%2BgAAAAAAAAAAAAAAAAAAAAQEAxigoCgUAAQBDPoAAAAAAAAAAAAAAAAAAAAABABojfgAAAAA=",
+  // every layer is in the associative part (slots 8-15); slots 0-6 are null.
+  // The first layer there carries the class definition.
+  skin543:
+    "CgcDYQACCQ8DOAoHBWFsAAEAUD11wo/C3AAAQIAAAMAAAAAAAAAaI34DOQoFAAEAUD11wo9C3AAAwIAAAMAAAAAAAAAaI34FMTAKBQABAA0%2BszMzAAAAAAAAAABAgAAAAAAAAAAABTExCgUAAQANPrMzMwAAAAAAAAAAQNAAAAAAANMvLwUxMgoFAAEADT6zMzMAAAAAAAAAAEEYAAAAAAAAAAAFMTMKBQABAFA%2BdcKPQzQAAAAAAABAQAAAAAAAAAAABTE0CgUAAQANP0AAAAAAAAAAAAAAAAAAAAAAANMvLwUxNQoFAAEADT9ZmZoAAAAAAAAAAAAAAAAAAAAAAAABAQEBAQEBAQDTLy8=",
+};
+
+test("reads layers written as index -> layer pairs", () => {
+  const skin = decodeSkinCode(SPARSE.skin543);
+  assert.equal(skin.bc, 0xd32f2f);
+  assert.deepEqual(
+    skin.layers.map((layer) => layer.id),
+    [80, 80, 13, 13, 13, 80, 13, 13],
+  );
+  // slot 8: the first eye
+  assert.ok(Math.abs(skin.layers[0].x - 4) < 1e-6);
+  assert.equal(skin.layers[0].color, 0x1a237e);
+  // slot 15: the last layer
+  assert.ok(Math.abs(skin.layers[7].scale - 0.85) < 1e-6);
+});
+
+test("skips empty slots in the index -> layer pairs", () => {
+  const skin = decodeSkinCode(SPARSE.skin166);
+  assert.equal(skin.bc, 0);
+  assert.deepEqual(
+    skin.layers.map((layer) => layer.color),
+    [0x311b92, 0xb71c1c, 0xc62828, 0x1a237e],
+  );
+});
+
 test("a corrupt slot is a clear error, not a silent misread", () => {
   // Replace the first layer marker (0x0a) with 0x0b.
   const bytes = Buffer.from(WITH_EMPTY_SLOTS.middleSlotsEmpty.replace(/%2B/g, "+"), "base64");
