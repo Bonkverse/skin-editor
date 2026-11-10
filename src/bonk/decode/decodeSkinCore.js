@@ -28,12 +28,23 @@ export function decodeSkinBytes(bytes) {
   readU8(); // 0x01
 
   // --- LAYERS ---
+  // The layer list has a fixed number of slots. A slot whose layer was
+  // removed in bonk.io holds AMF3 null (0x01) or undefined (0x00) instead of
+  // a layer object, so skip it. The first *layer* (not slot 0, which may be
+  // empty) carries the inline class definition (07 05 'a' 'l'); later layers
+  // refer back to it with one byte (05).
   const layers = [];
+  let classDefined = false;
   for (let l = 0; l < layerCount; l++) {
-    readU8(); // 0x0a
+    const marker = readU8();
+    if (marker === 0x01 || marker === 0x00) continue; // empty slot
+    if (marker !== 0x0a) {
+      throw new Error(`layer slot ${l}: unexpected byte 0x${marker.toString(16)}`);
+    }
 
-    if (l === 0) {
+    if (!classDefined) {
       readU8(); readU8(); readU8(); readU8();
+      classDefined = true;
     } else {
       readU8();
     }
