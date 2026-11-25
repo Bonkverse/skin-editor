@@ -8,6 +8,7 @@ import { svgCache } from "../utils/svgCache";
 import { validateSkin, warnBeforeBonk } from "../bonk/validateForBonk";
 import { encodeSkin } from "../utils/encodeSkin";
 import { toast } from "../utils/toast";
+import { parseSkinJSON } from "../bonk/importSkin";
 
 /**
  * Bonk skin import / export system
@@ -85,24 +86,12 @@ export function useBonkSerializer(shapes, baseColor, setBaseColor) {
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const parsed = JSON.parse(evt.target.result);
+        // Validated: a shared file is untrusted, and colors end up in HTML.
+        const { baseColor: importedBase, shapes: newShapes } = parseSkinJSON(
+          JSON.parse(evt.target.result)
+        );
 
-        setBaseColor(`#${parsed.bc.toString(16).padStart(6, "0")}`);
-
-        const newShapes = parsed.layers
-          .slice()
-          .reverse()
-          .map((l) => ({
-            id: l.id,
-            scale: parseFloat(l.scale) * BONK_SCALE_FACTOR,
-            angle: (parseFloat(l.angle) * Math.PI) / 180,
-            x: parseFloat(l.x) * BONK_X_POS_FACTOR,
-            y: parseFloat(l.y) * BONK_Y_POS_FACTOR,
-            flipX: !!l.flipX,
-            flipY: !!l.flipY,
-            color: `#${l.color.toString(16).padStart(6, "0")}`,
-          }));
-
+        setBaseColor(importedBase);
         shapes.commitShapes(newShapes);
         shapes.clearSelection();
         toast("Skin imported", { type: "success", duration: 2200 });

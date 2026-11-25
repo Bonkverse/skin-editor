@@ -226,6 +226,8 @@ export function useShapesEditor() {
   }
 
   function getShapeMarkup(id, color = "#000", size = 24) {
+    // This markup is put in the page as HTML (LayersTab): only ever a hex color.
+    if (!/^#[0-9a-fA-F]{3,8}$/.test(color)) color = "#000";
     const meta = svgCache.get(id);
     if (!meta) return "";
     const { html, w, h } = meta;
